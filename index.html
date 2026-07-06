@@ -58,7 +58,7 @@
   .theme-btn:hover { color: var(--ink-1); }
 
   .tiles { display: grid; grid-template-columns: minmax(240px, 1.6fr) repeat(3, minmax(150px, 1fr)); gap: 10px; margin: 14px 0; }
-  @media (max-width: 800px) { .tiles { grid-template-columns: 1fr 1fr; } }
+  @media (max-width: 800px) { .tiles { grid-template-columns: 1fr 1fr; } .tile.profile { grid-column: 1 / -1; } }
   .tile.profile .ph { display: flex; align-items: center; gap: 7px; }
   .tile.profile .ph .lg, .tile.profile .ph .mono { width: 22px; height: 22px; }
   .tile.profile .pn { font-weight: 650; font-size: 14px; }
@@ -104,7 +104,18 @@
   .tk .nm { flex: 1; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
   .tk .pc { font-size: 12px; font-variant-numeric: tabular-nums; }
   @media (max-width: 860px) {
-    .sidebar { max-height: 220px; overflow-y: auto; }
+    .sidebar { display: flex; overflow-x: auto; -webkit-overflow-scrolling: touch; padding: 6px; gap: 4px; }
+    .sidebar .grp { display: none; }
+    .sidebar button.tk { flex: none; width: auto; border: 1px solid var(--border); border-radius: 999px; padding: 6px 10px; }
+    .sidebar button.tk[aria-current="true"] { box-shadow: none; border-color: var(--series-1); }
+    .tk .nm { max-width: 110px; }
+    .controls .hint { display: none; }
+  }
+  @media (max-width: 600px) {
+    .wrap { padding: 12px 10px 40px; }
+    .tile .v { font-size: 19px; }
+    .chart-wrap { height: 320px; }
+    .ov-wrap { height: 44px; }
   }
 
   .card { background: var(--surface-1); border: 1px solid var(--border); border-radius: 10px; padding: 12px 12px 8px; }
@@ -841,14 +852,30 @@ function switchTicker(sym) {
 }
 
 /* ---------------- pointer interactions: main chart ---------------- */
-let dragging = null;
+let dragging = null, pinch = null;
+const touches = new Map();          // active pointers on the chart (for pinch)
 wrap.addEventListener("pointerdown", ev => {
-  const r = wrap.getBoundingClientRect();
-  dragging = { x: ev.clientX - r.left, t0: state.t0, t1: state.t1, moved: false };
+  const r = wrap.getBoundingClientRect(), mx = ev.clientX - r.left;
+  touches.set(ev.pointerId, mx);
+  if (touches.size === 2) {         // second finger: switch from pan to pinch
+    const xs = [...touches.values()];
+    dragging = null;
+    pinch = { d0: Math.max(20, Math.abs(xs[0] - xs[1])), c: pxDay((xs[0] + xs[1]) / 2),
+              t0: state.t0, t1: state.t1 };
+  } else if (touches.size === 1) {
+    dragging = { x: mx, t0: state.t0, t1: state.t1, moved: false };
+  }
   wrap.setPointerCapture(ev.pointerId);
 });
 wrap.addEventListener("pointermove", ev => {
   const r = wrap.getBoundingClientRect(), mx = ev.clientX - r.left, my = ev.clientY - r.top;
+  if (touches.has(ev.pointerId)) touches.set(ev.pointerId, mx);
+  if (pinch && touches.size >= 2) {
+    const xs = [...touches.values()];
+    const k = pinch.d0 / Math.max(20, Math.abs(xs[0] - xs[1]));
+    setView(pinch.c - (pinch.c - pinch.t0) * k, pinch.c + (pinch.t1 - pinch.c) * k);
+    return;
+  }
   if (dragging) {
     const dpx = mx - dragging.x;
     if (Math.abs(dpx) > 3) dragging.moved = true;
@@ -860,13 +887,16 @@ wrap.addEventListener("pointermove", ev => {
 });
 wrap.addEventListener("pointerup", ev => {
   const r = wrap.getBoundingClientRect(), mx = ev.clientX - r.left, my = ev.clientY - r.top;
-  if (dragging && !dragging.moved) {
+  if (dragging && !dragging.moved && !pinch) {
     const e = hoveredEvent(mx, my);
     if (e) selectEvent(e.i, false);
   }
+  touches.delete(ev.pointerId);
+  if (touches.size < 2) pinch = null;
   dragging = null;
 });
-wrap.addEventListener("pointerleave", () => { if (!dragging) clearOverlay(); });
+wrap.addEventListener("pointercancel", ev => { touches.delete(ev.pointerId); pinch = null; dragging = null; });
+wrap.addEventListener("pointerleave", () => { if (!dragging && !pinch) clearOverlay(); });
 wrap.addEventListener("wheel", ev => {
   ev.preventDefault();
   const r = wrap.getBoundingClientRect(), mx = ev.clientX - r.left;
