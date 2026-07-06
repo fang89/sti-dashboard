@@ -730,14 +730,18 @@ function buildYearTable() {
     if (y !== lastYear) { rows.push([y, s.c[i]]); lastYear = y; }
     rows[rows.length - 1][1] = s.c[i];
   }
-  for (const [y, close] of rows) {
+  const out = rows.map(([y, close]) => {
+    const chg = prevClose !== null ? (close / prevClose - 1) * 100 : null;
+    prevClose = close;
+    return [y, close, chg];
+  });
+  for (const [y, close, chg] of out.reverse()) {   // latest year first
     const tr = tbl.insertRow();
     tr.insertCell().textContent = y;
     tr.insertCell().textContent = fmtP(close, priceDp(close));
     const c = tr.insertCell();
-    if (prevClose !== null) { const chg = (close / prevClose - 1) * 100; c.textContent = fmtPct(chg); c.className = chg >= 0 ? "pos" : "neg"; }
+    if (chg !== null) { c.textContent = fmtPct(chg); c.className = chg >= 0 ? "pos" : "neg"; }
     else c.textContent = "—";
-    prevClose = close;
   }
 }
 
