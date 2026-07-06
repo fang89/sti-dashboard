@@ -637,14 +637,11 @@ function refreshChrome() {
 
 function refreshEventList() {
   const list = $("evList"); list.textContent = ""; list.scrollTop = 0;
-  const evs = visibleEvents();
-  let inView = 0;
+  const evs = visibleEvents().filter(e => e.day >= state.t0 && e.day <= state.t1);
   for (const e of evs) {
     const card = document.createElement("button");
     card.type = "button"; card.className = "ev-card";
     card.style.setProperty("--c", css(CATS[e.c].cssVar));
-    const out = e.day < state.t0 || e.day > state.t1;
-    if (out) card.classList.add("dim"); else inView++;
     if (e.i === state.sel) card.classList.add("sel");
     const dt = document.createElement("div"); dt.className = "dt";
     dt.textContent = dstr(e.day, true) + " · " + CATS[e.c].label;
@@ -654,7 +651,15 @@ function refreshEventList() {
     card.addEventListener("click", () => selectEvent(e.i, true));
     list.appendChild(card);
   }
-  $("evCount").textContent = `· ${inView} in view / ${evs.length} shown`;
+  $("evCount").textContent = `· ${evs.length} in the shown window`;
+  if (!evs.length) {
+    const empty = document.createElement("div");
+    empty.className = "hint"; empty.style.padding = "6px 2px";
+    empty.textContent = "No events in this window — zoom out or pick a longer range." +
+      (state.cats.has("earnings") && !(EARN[state.ticker] || []).length
+        ? " Earnings flags appear when a company is selected in the sidebar." : "");
+    list.appendChild(empty);
+  }
   // detail strip
   const det = $("evDetail");
   if (state.sel >= 0 && state.cats.has(ALL()[state.sel].c)) {
