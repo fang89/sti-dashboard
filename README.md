@@ -13,8 +13,9 @@ each constituent, annotated with whether it beat consensus EPS.
 
 - Canvas line chart with crosshair tooltip, wheel-zoom, drag-pan and an
   overview brush strip
-- Clickable event flags on the chart + event cards below; selecting one zooms
-  to ±18 months around it
+- Event annotations on the chart — callout boxes with leader lines when zoomed
+  in, dots on the price line when zoomed out; cards below list what's in view and
+  clicking one zooms to ±18 months around it
 - Ticker switcher for the index + 30 constituents, grouped by sector, showing
   each ticker's return over the currently shown window
 - Range presets (1W / 1M / 3M / 1Y / 5Y / Max — opens on 1M), linear/log scale, event-category filters (incl. earnings)

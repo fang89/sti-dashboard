@@ -358,7 +358,7 @@ const extent = s => [s.d[0], s.d[s.d.length - 1]];
 /* ---------------- canvases ---------------- */
 const wrap = $("chartWrap"), base = $("base"), overlay = $("overlay");
 const ovWrap = $("ovWrap"), ovCanvas = $("ovCanvas");
-const PAD = { l: 52, r: 14, t: 34, b: 26 };  // t leaves a lane for event flags
+const PAD = { l: 52, r: 14, t: 28, b: 26 };
 let W = 0, H = 0, OW = 0, OH = 0;
 
 function sizeCanvases() {
@@ -490,17 +490,53 @@ function renderMain() {
   ctx.fillStyle = grad; ctx.fill();
   ctx.restore();
 
-  // event hairlines + flags
-  const surface = css("--surface-1");
-  for (const e of visibleEvents()) {
-    if (e.day < state.t0 || e.day > state.t1) continue;
-    const x = Math.round(xPx(e.day)) + 0.5, col = css(CATS[e.c].cssVar), isSel = e.i === state.sel;
-    ctx.strokeStyle = col; ctx.globalAlpha = isSel ? 0.9 : 0.30; ctx.lineWidth = isSel ? 2 : 1;
-    ctx.beginPath(); ctx.moveTo(x, PAD.t - 6); ctx.lineTo(x, H - PAD.b); ctx.stroke();
-    ctx.globalAlpha = 1;
-    ctx.beginPath(); ctx.arc(x, 16, isSel ? 7 : 5.5, 0, Math.PI * 2);
+  // event markers: dot on the price line; callout box + leader when there is room
+  const surface = css("--surface-1"), ink = css("--ink-1");
+  evMarkers.length = 0;
+  const evs = visibleEvents().filter(e => e.day >= state.t0 && e.day <= state.t1);
+  const labelMode = evs.length <= 8;
+  const rows = [[], [], []];                      // occupied x-spans per stacking level
+  const rr = (x, y, w, h, r) => { ctx.beginPath(); ctx.roundRect ? ctx.roundRect(x, y, w, h, r) : ctx.rect(x, y, w, h); };
+  ctx.font = "11px system-ui, sans-serif";
+  for (const e of evs) {
+    const x = xPx(e.day), y = yPx(s.c[nearestIdx(s, e.day)]);
+    const col = css(CATS[e.c].cssVar), isSel = e.i === state.sel;
+    const m = { i: e.i, x, y, box: null };
+    if (isSel) {                                  // selected: faint full-height hairline
+      ctx.strokeStyle = col; ctx.globalAlpha = 0.35; ctx.lineWidth = 1.5;
+      ctx.beginPath(); ctx.moveTo(Math.round(x) + 0.5, PAD.t); ctx.lineTo(Math.round(x) + 0.5, H - PAD.b); ctx.stroke();
+      ctx.globalAlpha = 1;
+    }
+    if (labelMode || isSel) {
+      const label = e.t.length > 28 ? e.t.slice(0, 27) + "\u2026" : e.t;
+      const bw = ctx.measureText(label).width + 16, bh = 20;
+      const bx = Math.max(PAD.l + 2, Math.min(x - bw / 2, W - PAD.r - bw - 2));
+      let lvl = 0;
+      while (lvl < 3 && !rows[lvl].every(([a, b]) => bx > b + 6 || bx + bw < a - 6)) lvl++;
+      if (lvl < 3 || isSel) {                     // no free level and not selected -> dot only
+        if (lvl >= 3) lvl = 2;
+        rows[lvl].push([bx, bx + bw]);
+        const above = y - 38 - lvl * 26 >= PAD.t;
+        const by = above ? y - 38 - lvl * 26 : Math.min(y + 16 + lvl * 26, H - PAD.b - bh - 2);
+        ctx.strokeStyle = col; ctx.globalAlpha = 0.7; ctx.lineWidth = 1;
+        ctx.beginPath();
+        ctx.moveTo(Math.round(x) + 0.5, above ? y - 6 : y + 6);
+        ctx.lineTo(Math.round(x) + 0.5, above ? by + bh : by);
+        ctx.stroke(); ctx.globalAlpha = 1;
+        ctx.save();
+        ctx.shadowColor = "rgba(0,0,0,0.14)"; ctx.shadowBlur = 5; ctx.shadowOffsetY = 1;
+        rr(bx, by, bw, bh, 5); ctx.fillStyle = surface; ctx.fill();
+        ctx.restore();
+        rr(bx, by, bw, bh, 5); ctx.strokeStyle = col; ctx.lineWidth = isSel ? 1.8 : 1.2; ctx.stroke();
+        ctx.fillStyle = ink; ctx.textAlign = "left"; ctx.textBaseline = "middle";
+        ctx.fillText(label, bx + 8, by + bh / 2 + 0.5);
+        m.box = { x: bx, y: by, w: bw, h: bh };
+      }
+    }
+    ctx.beginPath(); ctx.arc(x, y, isSel ? 6 : 4.5, 0, Math.PI * 2);
     ctx.fillStyle = col; ctx.fill();
     ctx.lineWidth = 2; ctx.strokeStyle = surface; ctx.stroke();
+    evMarkers.push(m);
   }
   $("rangeLabel").textContent = dstr(state.t0, true) + " — " + dstr(state.t1, true);
 }
@@ -527,13 +563,15 @@ function renderOverview() {
 
 /* ---------------- overlay: crosshair + tooltip ---------------- */
 const tooltip = $("tooltip");
+const evMarkers = [];
 function clearOverlay() { overlay.getContext("2d").clearRect(0, 0, W, H); tooltip.style.display = "none"; }
 function hoveredEvent(mx, my) {
-  let best = null, bestDx = 7;
-  for (const e of visibleEvents()) {
-    if (e.day < state.t0 || e.day > state.t1) continue;
-    const dx = Math.abs(xPx(e.day) - mx);
-    if (dx < bestDx && (my < 30 || dx < 4)) { best = e; bestDx = dx; }
+  let best = null, bestD = 11;                    // generous hit radius around the dot
+  for (const m of evMarkers) {
+    if (m.box && mx >= m.box.x && mx <= m.box.x + m.box.w && my >= m.box.y && my <= m.box.y + m.box.h)
+      return { ...ALL()[m.i], i: m.i };
+    const d = Math.hypot(m.x - mx, m.y - my);
+    if (d < bestD) { best = { ...ALL()[m.i], i: m.i }; bestD = d; }
   }
   return best;
 }
