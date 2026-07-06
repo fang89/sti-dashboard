@@ -7,7 +7,7 @@
     --ink-1: #0b0b0b; --ink-2: #52514e; --muted: #898781;
     --grid: #e1e0d9; --baseline: #c3c2b7; --border: rgba(11,11,11,0.10);
     --series-1: #2a78d6; --up: #006300; --down: #d03b3b;
-    --cat-crisis: #e34948; --cat-sg: #1baf7a; --cat-policy: #4a3aa7; --cat-milestone: #eda100;
+    --cat-crisis: #e34948; --cat-sg: #1baf7a; --cat-policy: #4a3aa7; --cat-milestone: #eda100; --cat-earnings: #eb6834;
   }
   @media (prefers-color-scheme: dark) {
     :root {
@@ -15,7 +15,7 @@
       --ink-1: #ffffff; --ink-2: #c3c2b7; --muted: #898781;
       --grid: #2c2c2a; --baseline: #383835; --border: rgba(255,255,255,0.10);
       --series-1: #3987e5; --up: #0ca30c; --down: #e66767;
-      --cat-crisis: #e66767; --cat-sg: #199e70; --cat-policy: #9085e9; --cat-milestone: #c98500;
+      --cat-crisis: #e66767; --cat-sg: #199e70; --cat-policy: #9085e9; --cat-milestone: #c98500; --cat-earnings: #d95926;
     }
   }
   :root[data-theme="light"] {
@@ -23,14 +23,14 @@
     --ink-1: #0b0b0b; --ink-2: #52514e; --muted: #898781;
     --grid: #e1e0d9; --baseline: #c3c2b7; --border: rgba(11,11,11,0.10);
     --series-1: #2a78d6; --up: #006300; --down: #d03b3b;
-    --cat-crisis: #e34948; --cat-sg: #1baf7a; --cat-policy: #4a3aa7; --cat-milestone: #eda100;
+    --cat-crisis: #e34948; --cat-sg: #1baf7a; --cat-policy: #4a3aa7; --cat-milestone: #eda100; --cat-earnings: #eb6834;
   }
   :root[data-theme="dark"] {
     --surface-1: #1a1a19; --plane: #0d0d0d;
     --ink-1: #ffffff; --ink-2: #c3c2b7; --muted: #898781;
     --grid: #2c2c2a; --baseline: #383835; --border: rgba(255,255,255,0.10);
     --series-1: #3987e5; --up: #0ca30c; --down: #e66767;
-    --cat-crisis: #e66767; --cat-sg: #199e70; --cat-policy: #9085e9; --cat-milestone: #c98500;
+    --cat-crisis: #e66767; --cat-sg: #199e70; --cat-policy: #9085e9; --cat-milestone: #c98500; --cat-earnings: #d95926;
   }
   * { box-sizing: border-box; }
   html, body { margin: 0; }
@@ -44,6 +44,13 @@
   header h1 { font-size: 22px; margin: 0; letter-spacing: -0.01em; }
   header .sub { color: var(--ink-2); font-size: 13px; }
   header .spacer { flex: 1; }
+  header .flag { width: 30px; height: 20px; border-radius: 3px; box-shadow: 0 0 0 1px var(--border); align-self: center; flex: none; }
+  .lg { width: 18px; height: 18px; border-radius: 4px; flex: none; object-fit: contain; }
+  .mono {
+    width: 18px; height: 18px; border-radius: 4px; flex: none;
+    background: color-mix(in srgb, var(--series-1) 16%, transparent); color: var(--series-1);
+    font-size: 8px; font-weight: 700; display: inline-flex; align-items: center; justify-content: center;
+  }
   .theme-btn {
     border: 1px solid var(--border); background: var(--surface-1); color: var(--ink-2);
     border-radius: 8px; padding: 5px 10px; font: inherit; font-size: 12px; cursor: pointer;
@@ -83,7 +90,7 @@
   .sidebar { background: var(--surface-1); border: 1px solid var(--border); border-radius: 10px; overflow: hidden; }
   .sidebar .grp { font-size: 10.5px; text-transform: uppercase; letter-spacing: 0.07em; color: var(--muted); padding: 10px 12px 4px; }
   .sidebar button.tk {
-    display: flex; width: 100%; align-items: baseline; gap: 8px; border: 0; background: none;
+    display: flex; width: 100%; align-items: center; gap: 8px; border: 0; background: none;
     padding: 6px 12px; font: inherit; font-size: 13px; color: var(--ink-1); cursor: pointer; text-align: left;
   }
   .sidebar button.tk:hover { background: color-mix(in srgb, var(--series-1) 8%, transparent); }
@@ -95,7 +102,7 @@
   }
 
   .card { background: var(--surface-1); border: 1px solid var(--border); border-radius: 10px; padding: 12px 12px 8px; }
-  .chart-head { display: flex; align-items: baseline; gap: 10px; padding: 0 4px 4px; }
+  .chart-head { display: flex; align-items: center; gap: 8px; padding: 0 4px 4px; }
   .chart-head .nm { font-weight: 650; font-size: 15px; }
   .chart-head .code { color: var(--muted); font-size: 12px; }
   .chart-wrap { position: relative; height: 430px; touch-action: none; cursor: crosshair; }
@@ -150,6 +157,11 @@
 
 <div class="wrap">
   <header>
+    <svg class="flag" viewBox="0 0 36 24" aria-hidden="true">
+      <rect width="36" height="24" fill="#fff"/><rect width="36" height="12" fill="#ED2939"/>
+      <circle cx="8.2" cy="6" r="4.3" fill="#fff"/><circle cx="9.8" cy="6" r="3.6" fill="#ED2939"/>
+      <g fill="#fff"><circle cx="13" cy="3.8" r=".8"/><circle cx="10.8" cy="5.4" r=".8"/><circle cx="15.2" cy="5.4" r=".8"/><circle cx="11.7" cy="7.9" r=".8"/><circle cx="14.3" cy="7.9" r=".8"/></g>
+    </svg>
     <h1>Straits Times Index</h1>
     <div class="sub" id="subtitle">38 years of Singapore's market, annotated</div>
     <div class="spacer"></div>
@@ -174,7 +186,7 @@
     <div>
       <div class="card">
         <div class="chart-head">
-          <span class="nm" id="chartName"></span><span class="code" id="chartCode"></span>
+          <img class="lg" id="chartLogo" alt="" style="display:none"><span class="nm" id="chartName"></span><span class="code" id="chartCode"></span>
           <span class="spacer" style="flex:1"></span>
           <span class="hint" id="rangeLabel"></span>
         </div>
@@ -209,10 +221,14 @@
 </div>
 
 <script src="data.js"></script>
+<script src="logos.js"></script>
+<script src="earnings.js"></script>
 <script>
 "use strict";
 /* ---------------- data & config ---------------- */
 const SERIES = window.STI_DATA.series;
+const LOGOS = window.STI_LOGOS || {};
+const EARN = window.STI_EARNINGS || {};
 document.getElementById("genDate").textContent = "fetched " + window.STI_DATA.generated;
 
 const CATS = {
@@ -220,33 +236,52 @@ const CATS = {
   sg:        { label: "Singapore",    cssVar: "--cat-sg" },
   policy:    { label: "Policy",       cssVar: "--cat-policy" },
   milestone: { label: "Milestone",    cssVar: "--cat-milestone" },
+  earnings:  { label: "Earnings",     cssVar: "--cat-earnings" },
 };
 
 const EVENTS = [
+  { d: "1990-08-02", c: "crisis",    t: "Iraq invades Kuwait", b: "The Gulf crisis sends oil soaring and risk assets tumbling. The STI slides about 30% to 1,080 by October before Desert Storm clears the uncertainty." },
+  { d: "1994-01-04", c: "milestone", t: "1994 bull-market peak: 2,472", b: "The emerging-market boom peaks days into the new year. US rate hikes and regional froth unwind the rally through 1994–95." },
+  { d: "1995-02-27", c: "sg",        t: "Barings collapses in Singapore", b: "Nick Leeson's hidden SIMEX derivatives losses (£827m) sink Britain's oldest merchant bank. The STI barely flinches, but Singapore overhauls exchange oversight." },
   { d: "1997-07-02", c: "crisis",    t: "Asian Financial Crisis begins", b: "Thailand floats the baht and contagion sweeps Asian markets. The STI loses more than half its value over the following fourteen months." },
   { d: "1998-09-01", c: "sg",        t: "Malaysia capital controls; CLOB frozen", b: "Kuala Lumpur imposes capital controls. Malaysian shares held by some 170,000 Singapore investors through CLOB International are frozen overnight." },
   { d: "1998-09-04", c: "milestone", t: "Asian-crisis low: 805", b: "The STI bottoms at 805 — roughly 60% below its 1996 highs — then stages one of the sharpest recoveries in its history." },
   { d: "2000-01-03", c: "milestone", t: "Dot-com era peak: 2,583", b: "The index has more than tripled off the 1998 low as tech mania peaks. The global tech bust then grinds the STI down through 2001." },
   { d: "2001-09-11", c: "crisis",    t: "September 11 attacks", b: "Global markets sell off. With the tech bust already underway, the STI sinks toward 1,200 in the weeks that follow." },
+  { d: "2002-10-14", c: "crisis",    t: "Bali bombings", b: "Terror strikes Southeast Asia's doorstep with the STI already pinned near five-year lows, deepening the region's tourism and confidence gloom." },
   { d: "2003-03-10", c: "crisis",    t: "SARS trough: 1,214", b: "Singapore is among the economies hit hardest by SARS. The STI bottoms two days before the WHO's global alert — and a five-year bull run begins." },
   { d: "2005-04-18", c: "sg",        t: "Integrated Resorts approved", b: "Parliament approves two casino Integrated Resorts at Marina Bay and Sentosa, kicking off a tourism, construction and property boom." },
+  { d: "2007-02-27", c: "crisis",    t: "Shanghai surprise", b: "A 9% one-day plunge in Shanghai ripples through world markets; the STI sheds about 6% in two sessions — an early tremor of the froth." },
+  { d: "2007-08-09", c: "crisis",    t: "Credit crunch begins", b: "BNP Paribas freezes three funds and interbank lending seizes up — the opening tremor of the Global Financial Crisis." },
   { d: "2007-10-11", c: "milestone", t: "Pre-crisis record: 3,876", b: "A five-year bull run powered by China, commodities and property peaks at 3,875.77 — a closing record that stands for over seventeen years, until January 2025." },
   { d: "2008-01-10", c: "policy",    t: "STI revamped to 30 stocks", b: "The index moves to FTSE methodology and is slimmed down to 30 constituents — the modern STI takes shape." },
   { d: "2008-09-15", c: "crisis",    t: "Lehman Brothers collapses", b: "The Global Financial Crisis turns systemic. The Minibonds saga hits Singapore retail investors, and the STI halves in six months." },
+  { d: "2008-10-16", c: "sg",        t: "Deposits guaranteed", b: "Singapore guarantees all bank deposits (S$150b) to head off regional deposit flight — one of the steadying moves at the heart of the crisis." },
+  { d: "2009-01-22", c: "sg",        t: "Resilience Package", b: "A S$20.5b Budget with the first-ever draw on past reserves; Jobs Credit subsidises wages to keep retrenchments down." },
   { d: "2009-03-09", c: "milestone", t: "GFC low: 1,457", b: "Down 62% from the 2007 peak. Coordinated global stimulus then ignites a rebound that roughly doubles the index within a year." },
   { d: "2010-04-27", c: "sg",        t: "Marina Bay Sands opens", b: "Both Integrated Resorts open in 2010 — Resorts World Sentosa in February, MBS in April — transforming tourism receipts and Genting Singapore's fortunes." },
+  { d: "2011-03-11", c: "crisis",    t: "Tōhoku earthquake & Fukushima", b: "Japan's quake, tsunami and nuclear crisis jolt Asian supply chains and risk appetite." },
   { d: "2011-08-08", c: "crisis",    t: "US downgrade & euro crisis", b: "S&P strips the United States of its AAA rating amid the eurozone debt crisis. The STI drops about 20% over the quarter." },
+  { d: "2012-07-26", c: "policy",    t: "'Whatever it takes'", b: "Draghi's pledge to save the euro ends the crisis tail risk. The global hunt for yield that follows lifts Singapore's REIT-heavy market." },
+  { d: "2013-01-11", c: "sg",        t: "Seventh round of property cooling", b: "Hefty ABSD hikes hit developers and investment demand; the curbs on residential property stay in place for the rest of the decade." },
   { d: "2013-06-20", c: "policy",    t: "Taper tantrum", b: "The Fed signals the end of quantitative easing. Yield plays sell off hard — a warning shot for the REIT-heavy Singapore market." },
   { d: "2013-10-04", c: "sg",        t: "Penny stock crash", b: "Blumont, Asiasons and LionGold collapse, erasing about S$8 billion in days. The scandal weighs on SGX sentiment and volumes for years." },
+  { d: "2014-11-27", c: "crisis",    t: "OPEC opens the taps", b: "OPEC declines to cut output and oil collapses. Keppel's and Sembcorp's rig order books — and the banks' oil & gas loans — sour through 2016." },
   { d: "2015-08-24", c: "crisis",    t: "China devaluation 'Black Monday'", b: "A surprise yuan devaluation triggers a global rout. With oil in freefall, the STI slides into a bear market through early 2016." },
+  { d: "2016-01-21", c: "milestone", t: "Oil-crash bear low: 2,533", b: "The STI bottoms with Brent near US$27 a barrel, ending a 25% slide from the 2015 highs." },
   { d: "2016-06-24", c: "crisis",    t: "Brexit vote", b: "The UK votes to leave the EU. The STI dips with global markets but recovers within weeks." },
   { d: "2016-07-28", c: "sg",        t: "Swiber default", b: "Swiber's collapse marks the depth of the offshore & marine debt crisis hobbling Keppel, Sembcorp Marine and the local banks' oil & gas loan books." },
+  { d: "2016-11-09", c: "policy",    t: "Trump elected; reflation trade", b: "Asia dips on the result, then steeper yield curves spark a global bank rally — a tailwind for the STI's heavyweight lenders." },
   { d: "2018-03-22", c: "crisis",    t: "US–China trade war begins", b: "Washington announces its first China-specific tariffs. Trade-dependent Singapore gives back its early-2018 gains over the year." },
+  { d: "2018-07-06", c: "sg",        t: "Surprise ABSD hike", b: "Cooling measures announced the evening before send property developers slumping; the STI drops 2% on the day." },
   { d: "2020-01-23", c: "crisis",    t: "COVID-19 reaches Singapore", b: "Wuhan locks down and Singapore confirms its first case the same day. Within two months the STI loses a third of its value." },
   { d: "2020-03-23", c: "milestone", t: "COVID low: 2,233", b: "The pandemic trough — a 32% collapse in nine weeks — is followed by an uneven, two-year recovery." },
   { d: "2020-04-07", c: "sg",        t: "Circuit breaker begins", b: "Singapore enters its COVID lockdown. GDP shrinks a record 5.4% in 2020, and SIA launches a S$15 billion rescue rights issue." },
+  { d: "2020-11-09", c: "milestone", t: "Vaccine Monday", b: "Pfizer/BioNTech's 90% efficacy result turns the market. Reopening plays surge and the STI jumps over 5% in three sessions — the start of the recovery leg." },
+  { d: "2022-02-24", c: "crisis",    t: "Russia invades Ukraine", b: "The STI drops 3.4% on the day. Commodity prices spike, cushioning Singapore's agri and energy-linked names in the weeks that follow." },
   { d: "2022-03-16", c: "policy",    t: "Fed's fastest hiking cycle", b: "The Fed begins its steepest rate rises in decades. Net interest margins swell at DBS, OCBC and UOB — together roughly half the STI's weight." },
   { d: "2023-03-10", c: "crisis",    t: "SVB & Credit Suisse stress", b: "US regional-bank failures and the Credit Suisse rescue rattle global financials. Singapore's banks prove resilient." },
+  { d: "2023-10-23", c: "milestone", t: "'Higher for longer' low: 3,053", b: "The post-COVID rate scare troughs as 10-year Treasury yields touch 5% — the launchpad for the 2024–26 rally." },
   { d: "2024-08-05", c: "crisis",    t: "Yen carry-trade unwind", b: "A violent unwind of yen-funded trades hits Asia. The Nikkei has its worst day since 1987; the STI falls 4.1%." },
   { d: "2025-02-21", c: "policy",    t: "MAS S$5b market revival plan", b: "The MAS-led review group unveils a S$5 billion Equity Market Development Programme plus tax incentives to revitalise the Singapore market." },
   { d: "2025-04-07", c: "crisis",    t: "'Liberation Day' tariff crash", b: "Sweeping US tariffs trigger the STI's worst one-day fall since 2008: −7.5%. A 90-day tariff pause two days later sparks a V-shaped rebound." },
@@ -254,6 +289,28 @@ const EVENTS = [
 ];
 const dayOf = iso => Math.round(Date.parse(iso + "T00:00:00Z") / 86400000);
 EVENTS.forEach(e => e.day = dayOf(e.d));
+
+const evCache = {};
+function ALL() {
+  const k = state.ticker;
+  if (!evCache[k]) {
+    const earn = (EARN[k] || []).map(([day, est, act, sur]) => {
+      let title, blurb;
+      if (act != null && est != null) {
+        const beat = act >= est;
+        title = "Earnings " + (beat ? "\u25b2 beat estimates" : "\u25bc missed estimates");
+        blurb = `Reported EPS ${act} vs ${est} consensus` + (sur != null ? ` \u2014 ${sur >= 0 ? "+" : ""}${sur.toFixed(1)}% surprise.` : ".");
+      } else if (act != null) {
+        title = "Earnings released"; blurb = `Reported EPS ${act}; no consensus estimate recorded.`;
+      } else {
+        title = "Earnings released"; blurb = "No EPS figures recorded for this release.";
+      }
+      return { day, c: "earnings", t: title, b: blurb };
+    });
+    evCache[k] = EVENTS.concat(earn).sort((a, b) => a.day - b.day);
+  }
+  return evCache[k];
+}
 
 const GROUPS = [
   ["Index", ["^STI"]],
@@ -272,7 +329,7 @@ const state = {
   log: false,
   cats: new Set(Object.keys(CATS)),
   sel: -1,                 // selected event index
-  preset: "Max",
+  preset: "1M",
 };
 
 /* ---------------- helpers ---------------- */
@@ -343,6 +400,17 @@ function ticksLog(lo, hi) {
   return out.length >= 3 ? out : niceTicksLinear(lo, hi, 5);
 }
 function xTicks() {
+  const spanD = state.t1 - state.t0;
+  if (spanD <= 45) {                    // day-level ticks for 1W / 1M views
+    const step = spanD <= 10 ? 1 : 7;
+    const out = [];
+    for (let day = Math.ceil(state.t0); day <= state.t1; day++) {
+      const dt = new Date(day * 86400000);
+      if (step === 7 && dt.getUTCDay() !== 1) continue;   // Mondays
+      out.push({ day, label: dt.getUTCDate() + " " + MONTHS[dt.getUTCMonth()] });
+    }
+    return out;
+  }
   const spanY = (state.t1 - state.t0) / 365.25;
   const stepM = spanY > 24 ? 60 : spanY > 12 ? 24 : spanY > 5 ? 12 : spanY > 2.5 ? 6 : spanY > 1 ? 3 : 1;
   const d0 = new Date(state.t0 * 86400000);
@@ -360,7 +428,7 @@ function xTicks() {
 
 function visibleEvents() {
   const s = cur(), [lo] = extent(s);
-  return EVENTS.map((e, i) => ({ ...e, i }))
+  return ALL().map((e, i) => ({ ...e, i }))
     .filter(e => state.cats.has(e.c) && e.day >= lo);
 }
 
@@ -507,7 +575,7 @@ function drawOverlay(mx, my) {
 /* ---------------- view changes ---------------- */
 function clampView() {
   const [lo, hi] = extent(cur());
-  const span = Math.max(30, Math.min(state.t1 - state.t0, hi - lo));
+  const span = Math.max(6, Math.min(state.t1 - state.t0, hi - lo));
   state.t0 = Math.max(lo, Math.min(state.t0, hi - span));
   state.t1 = state.t0 + span;
 }
@@ -518,9 +586,9 @@ function setView(t0, t1, keepSel) {
 }
 function applyPreset(name) {
   const [lo, hi] = extent(cur());
-  const yrs = { "1Y": 1, "3Y": 3, "5Y": 5, "10Y": 10, "20Y": 20 }[name];
+  const days = { "1W": 7, "1M": 30.44, "3M": 91.3, "1Y": 365.25, "5Y": 1826.25 }[name];
   state.preset = name;
-  setView(yrs ? hi - yrs * 365.25 : lo, hi, true);
+  setView(days ? hi - days : lo, hi, true);
 }
 
 /* ---------------- chrome: tiles, sidebar, events, table ---------------- */
@@ -589,12 +657,12 @@ function refreshEventList() {
   $("evCount").textContent = `· ${inView} in view / ${evs.length} shown`;
   // detail strip
   const det = $("evDetail");
-  if (state.sel >= 0 && state.cats.has(EVENTS[state.sel].c)) {
-    const e = EVENTS[state.sel];
+  if (state.sel >= 0 && state.cats.has(ALL()[state.sel].c)) {
+    const e = ALL()[state.sel];
     det.style.display = "block";
     det.style.setProperty("--c", css(CATS[e.c].cssVar));
     det.querySelector(".dt").textContent = dstr(e.day, true) + " · " + CATS[e.c].label +
-      " · " + state.ticker.replace("^STI", "STI") + " at " + fmtP(closeAt(cur(), e.day), priceDp(closeAt(cur(), e.day)));
+      " · " + cur().name + " at " + fmtP(closeAt(cur(), e.day), priceDp(closeAt(cur(), e.day)));
     det.querySelector(".tt").textContent = e.t;
     det.querySelector(".bb").textContent = e.b;
   } else det.style.display = "none";
@@ -603,7 +671,7 @@ function refreshEventList() {
 function selectEvent(i, zoom) {
   state.sel = (state.sel === i && !zoom) ? -1 : i;
   if (zoom && state.sel >= 0) {
-    const e = EVENTS[i], half = Math.max(240, (state.t1 - state.t0) / 2 > 3000 ? 540 : 300);
+    const e = ALL()[i], half = Math.max(240, (state.t1 - state.t0) / 2 > 3000 ? 540 : 300);
     setView(e.day - half, e.day + half);
   } else { renderMain(); refreshChrome(); }
 }
@@ -632,7 +700,7 @@ function buildYearTable() {
 
 /* ---------------- build static chrome ---------------- */
 function buildControls() {
-  for (const name of ["1Y", "3Y", "5Y", "10Y", "20Y", "Max"]) {
+  for (const name of ["1W", "1M", "3M", "1Y", "5Y", "Max"]) {
     const b = document.createElement("button"); b.type = "button"; b.textContent = name;
     b.addEventListener("click", () => applyPreset(name));
     $("ranges").appendChild(b);
@@ -669,16 +737,30 @@ function buildSidebar() {
       b.type = "button"; b.className = "tk"; b.dataset.sym = sym;
       const nm = document.createElement("span"); nm.className = "nm"; nm.textContent = SERIES[sym].name;
       const pc = document.createElement("span"); pc.className = "pc";
-      b.append(nm, pc);
+      b.append(logoEl(sym), nm, pc);
       b.addEventListener("click", () => switchTicker(sym));
       sb.appendChild(b);
     }
   }
 }
 
+function logoEl(sym) {
+  if (LOGOS[sym]) {
+    const img = document.createElement("img");
+    img.className = "lg"; img.alt = ""; img.src = LOGOS[sym];
+    return img;
+  }
+  const m = document.createElement("span"); m.className = "mono";
+  m.textContent = sym === "^STI" ? "STI"
+    : SERIES[sym].name.split(/\s+/).slice(0, 2).map(w => w[0]).join("").toUpperCase();
+  return m;
+}
+
 function switchTicker(sym) {
   state.ticker = sym; state.sel = -1;
   const s = SERIES[sym], [lo, hi] = extent(s);
+  const cl = $("chartLogo");
+  if (LOGOS[sym]) { cl.src = LOGOS[sym]; cl.style.display = ""; } else cl.style.display = "none";
   $("chartName").textContent = s.name;
   $("chartCode").textContent = sym === "^STI" ? "SGX index · 1987–present" : "SGX: " + sym.replace(".SI", "");
   if (state.preset) applyPreset(state.preset);
@@ -766,5 +848,5 @@ buildSidebar();
 new ResizeObserver(() => { sizeCanvases(); renderMain(); renderOverview(); }).observe(wrap);
 sizeCanvases();
 switchTicker("^STI");
-applyPreset("Max");
+applyPreset("1M");
 </script>
