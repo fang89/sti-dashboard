@@ -1,0 +1,770 @@
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>STI Dashboard — 38 Years, Annotated</title>
+<style>
+  :root {
+    --surface-1: #fcfcfb; --plane: #f9f9f7;
+    --ink-1: #0b0b0b; --ink-2: #52514e; --muted: #898781;
+    --grid: #e1e0d9; --baseline: #c3c2b7; --border: rgba(11,11,11,0.10);
+    --series-1: #2a78d6; --up: #006300; --down: #d03b3b;
+    --cat-crisis: #e34948; --cat-sg: #1baf7a; --cat-policy: #4a3aa7; --cat-milestone: #eda100;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root {
+      --surface-1: #1a1a19; --plane: #0d0d0d;
+      --ink-1: #ffffff; --ink-2: #c3c2b7; --muted: #898781;
+      --grid: #2c2c2a; --baseline: #383835; --border: rgba(255,255,255,0.10);
+      --series-1: #3987e5; --up: #0ca30c; --down: #e66767;
+      --cat-crisis: #e66767; --cat-sg: #199e70; --cat-policy: #9085e9; --cat-milestone: #c98500;
+    }
+  }
+  :root[data-theme="light"] {
+    --surface-1: #fcfcfb; --plane: #f9f9f7;
+    --ink-1: #0b0b0b; --ink-2: #52514e; --muted: #898781;
+    --grid: #e1e0d9; --baseline: #c3c2b7; --border: rgba(11,11,11,0.10);
+    --series-1: #2a78d6; --up: #006300; --down: #d03b3b;
+    --cat-crisis: #e34948; --cat-sg: #1baf7a; --cat-policy: #4a3aa7; --cat-milestone: #eda100;
+  }
+  :root[data-theme="dark"] {
+    --surface-1: #1a1a19; --plane: #0d0d0d;
+    --ink-1: #ffffff; --ink-2: #c3c2b7; --muted: #898781;
+    --grid: #2c2c2a; --baseline: #383835; --border: rgba(255,255,255,0.10);
+    --series-1: #3987e5; --up: #0ca30c; --down: #e66767;
+    --cat-crisis: #e66767; --cat-sg: #199e70; --cat-policy: #9085e9; --cat-milestone: #c98500;
+  }
+  * { box-sizing: border-box; }
+  html, body { margin: 0; }
+  body {
+    background: var(--plane); color: var(--ink-1);
+    font: 14px/1.45 system-ui, -apple-system, "Segoe UI", sans-serif;
+  }
+  .wrap { max-width: 1240px; margin: 0 auto; padding: 20px 16px 48px; }
+
+  header { display: flex; align-items: baseline; gap: 12px; flex-wrap: wrap; margin-bottom: 6px; }
+  header h1 { font-size: 22px; margin: 0; letter-spacing: -0.01em; }
+  header .sub { color: var(--ink-2); font-size: 13px; }
+  header .spacer { flex: 1; }
+  .theme-btn {
+    border: 1px solid var(--border); background: var(--surface-1); color: var(--ink-2);
+    border-radius: 8px; padding: 5px 10px; font: inherit; font-size: 12px; cursor: pointer;
+  }
+  .theme-btn:hover { color: var(--ink-1); }
+
+  .tiles { display: grid; grid-template-columns: repeat(auto-fit, minmax(160px, 1fr)); gap: 10px; margin: 14px 0; }
+  .tile { background: var(--surface-1); border: 1px solid var(--border); border-radius: 10px; padding: 10px 14px; }
+  .tile .k { font-size: 11px; text-transform: uppercase; letter-spacing: 0.06em; color: var(--muted); }
+  .tile .v { font-size: 22px; font-weight: 650; margin-top: 2px; }
+  .tile .s { font-size: 12px; color: var(--ink-2); margin-top: 1px; }
+  .pos { color: var(--up); } .neg { color: var(--down); }
+
+  .controls { display: flex; align-items: center; gap: 14px; flex-wrap: wrap; margin: 10px 0 12px; }
+  .seg { display: inline-flex; border: 1px solid var(--border); border-radius: 8px; overflow: hidden; background: var(--surface-1); }
+  .seg button {
+    border: 0; background: none; color: var(--ink-2); padding: 6px 11px;
+    font: inherit; font-size: 12.5px; cursor: pointer; border-right: 1px solid var(--border);
+  }
+  .seg button:last-child { border-right: 0; }
+  .seg button:hover { color: var(--ink-1); }
+  .seg button[aria-pressed="true"] { background: var(--series-1); color: #fff; }
+  .chips { display: inline-flex; gap: 6px; flex-wrap: wrap; }
+  .chip {
+    display: inline-flex; align-items: center; gap: 6px; cursor: pointer;
+    border: 1px solid var(--border); background: var(--surface-1); color: var(--ink-2);
+    border-radius: 999px; padding: 5px 11px; font: inherit; font-size: 12.5px;
+  }
+  .chip .dot { width: 9px; height: 9px; border-radius: 50%; background: var(--c); box-shadow: 0 0 0 1px var(--border); }
+  .chip[aria-pressed="false"] { opacity: 0.45; }
+  .chip[aria-pressed="false"] .dot { background: var(--muted); }
+  .hint { color: var(--muted); font-size: 12px; }
+
+  .layout { display: grid; grid-template-columns: 232px 1fr; gap: 14px; align-items: start; }
+  @media (max-width: 860px) { .layout { grid-template-columns: 1fr; } }
+
+  .sidebar { background: var(--surface-1); border: 1px solid var(--border); border-radius: 10px; overflow: hidden; }
+  .sidebar .grp { font-size: 10.5px; text-transform: uppercase; letter-spacing: 0.07em; color: var(--muted); padding: 10px 12px 4px; }
+  .sidebar button.tk {
+    display: flex; width: 100%; align-items: baseline; gap: 8px; border: 0; background: none;
+    padding: 6px 12px; font: inherit; font-size: 13px; color: var(--ink-1); cursor: pointer; text-align: left;
+  }
+  .sidebar button.tk:hover { background: color-mix(in srgb, var(--series-1) 8%, transparent); }
+  .sidebar button.tk[aria-current="true"] { background: color-mix(in srgb, var(--series-1) 14%, transparent); box-shadow: inset 3px 0 0 var(--series-1); }
+  .tk .nm { flex: 1; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .tk .pc { font-size: 12px; font-variant-numeric: tabular-nums; }
+  @media (max-width: 860px) {
+    .sidebar { max-height: 220px; overflow-y: auto; }
+  }
+
+  .card { background: var(--surface-1); border: 1px solid var(--border); border-radius: 10px; padding: 12px 12px 8px; }
+  .chart-head { display: flex; align-items: baseline; gap: 10px; padding: 0 4px 4px; }
+  .chart-head .nm { font-weight: 650; font-size: 15px; }
+  .chart-head .code { color: var(--muted); font-size: 12px; }
+  .chart-wrap { position: relative; height: 430px; touch-action: none; cursor: crosshair; }
+  .chart-wrap canvas, .ov-wrap canvas { position: absolute; inset: 0; width: 100%; height: 100%; }
+  .ov-wrap { position: relative; height: 56px; margin-top: 8px; touch-action: none; cursor: grab; }
+  .tooltip {
+    position: absolute; pointer-events: none; display: none; z-index: 3; min-width: 150px; max-width: 260px;
+    background: var(--surface-1); border: 1px solid var(--border); border-radius: 8px;
+    box-shadow: 0 4px 16px rgba(0,0,0,0.18); padding: 8px 10px; font-size: 12px;
+  }
+  .tooltip .d { color: var(--ink-2); }
+  .tooltip .p { font-size: 16px; font-weight: 650; color: var(--ink-1); }
+  .tooltip .r { color: var(--ink-2); margin-top: 1px; }
+  .tooltip .ev { display: flex; gap: 6px; align-items: baseline; margin-top: 6px; padding-top: 6px; border-top: 1px solid var(--grid); }
+  .tooltip .ev .key { width: 14px; height: 0; border-top: 3px solid var(--c); transform: translateY(-3px); flex: none; }
+
+  .ev-detail {
+    display: none; margin-top: 10px; border: 1px solid var(--border); border-left: 4px solid var(--c);
+    background: color-mix(in srgb, var(--c) 6%, var(--surface-1));
+    border-radius: 8px; padding: 10px 12px; position: relative;
+  }
+  .ev-detail .dt { font-size: 12px; color: var(--ink-2); }
+  .ev-detail .tt { font-weight: 650; margin: 1px 0 3px; }
+  .ev-detail .bb { font-size: 13px; color: var(--ink-2); }
+  .ev-detail .x { position: absolute; top: 6px; right: 8px; border: 0; background: none; color: var(--muted); font-size: 15px; cursor: pointer; }
+
+  .ev-panel { margin-top: 14px; }
+  .ev-panel h2 { font-size: 14px; margin: 0 0 8px; }
+  .ev-list { display: grid; grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); gap: 8px; max-height: 330px; overflow-y: auto; padding-right: 2px; }
+  .ev-card {
+    display: block; text-align: left; font: inherit; cursor: pointer;
+    background: var(--surface-1); border: 1px solid var(--border); border-left: 4px solid var(--c);
+    border-radius: 8px; padding: 8px 10px; color: var(--ink-1);
+  }
+  .ev-card:hover { border-color: var(--c); }
+  .ev-card.dim { opacity: 0.5; }
+  .ev-card.sel { box-shadow: 0 0 0 2px var(--c); }
+  .ev-card .dt { font-size: 11px; color: var(--muted); }
+  .ev-card .tt { font-weight: 600; font-size: 13px; margin: 1px 0 2px; }
+  .ev-card .bb { font-size: 12px; color: var(--ink-2); }
+
+  details.tbl { margin-top: 14px; }
+  details.tbl summary { cursor: pointer; color: var(--ink-2); font-size: 13px; }
+  details.tbl table { border-collapse: collapse; margin-top: 8px; font-size: 12.5px; }
+  details.tbl th, details.tbl td { border: 1px solid var(--grid); padding: 4px 10px; text-align: right; font-variant-numeric: tabular-nums; }
+  details.tbl th:first-child, details.tbl td:first-child { text-align: left; }
+  details.tbl th { color: var(--ink-2); font-weight: 600; }
+
+  footer { margin-top: 22px; color: var(--muted); font-size: 12px; }
+  footer a { color: var(--ink-2); }
+</style>
+
+<div class="wrap">
+  <header>
+    <h1>Straits Times Index</h1>
+    <div class="sub" id="subtitle">38 years of Singapore's market, annotated</div>
+    <div class="spacer"></div>
+    <button class="theme-btn" id="themeBtn" type="button">◐ Theme</button>
+  </header>
+
+  <div class="tiles" id="tiles"></div>
+
+  <div class="controls">
+    <div class="seg" id="ranges" role="group" aria-label="Date range"></div>
+    <div class="seg" id="scaleSeg" role="group" aria-label="Scale">
+      <button type="button" data-scale="lin" aria-pressed="true">Linear</button>
+      <button type="button" data-scale="log" aria-pressed="false">Log</button>
+    </div>
+    <div class="chips" id="catChips" role="group" aria-label="Event categories"></div>
+    <span class="hint">scroll to zoom · drag to pan · click a flag or card for the story</span>
+  </div>
+
+  <div class="layout">
+    <nav class="sidebar" id="sidebar" aria-label="Tickers"></nav>
+
+    <div>
+      <div class="card">
+        <div class="chart-head">
+          <span class="nm" id="chartName"></span><span class="code" id="chartCode"></span>
+          <span class="spacer" style="flex:1"></span>
+          <span class="hint" id="rangeLabel"></span>
+        </div>
+        <div class="chart-wrap" id="chartWrap">
+          <canvas id="base"></canvas><canvas id="overlay"></canvas>
+          <div class="tooltip" id="tooltip"></div>
+        </div>
+        <div class="ov-wrap" id="ovWrap"><canvas id="ovCanvas"></canvas></div>
+      </div>
+
+      <div class="ev-detail" id="evDetail">
+        <button class="x" type="button" aria-label="Clear selection" id="evClose">✕</button>
+        <div class="dt"></div><div class="tt"></div><div class="bb"></div>
+      </div>
+
+      <div class="ev-panel">
+        <h2>Key events <span class="hint" id="evCount"></span></h2>
+        <div class="ev-list" id="evList"></div>
+      </div>
+
+      <details class="tbl" id="tableView">
+        <summary>Data table (year-end closes)</summary>
+        <div style="overflow-x:auto"><table id="yearTable"></table></div>
+      </details>
+
+      <footer>
+        Prices: Yahoo Finance daily closes (unadjusted), <span id="genDate"></span> ·
+        Events curated from public reporting · Not investment advice.
+      </footer>
+    </div>
+  </div>
+</div>
+
+<script src="data.js"></script>
+<script>
+"use strict";
+/* ---------------- data & config ---------------- */
+const SERIES = window.STI_DATA.series;
+document.getElementById("genDate").textContent = "fetched " + window.STI_DATA.generated;
+
+const CATS = {
+  crisis:    { label: "Crisis",       cssVar: "--cat-crisis" },
+  sg:        { label: "Singapore",    cssVar: "--cat-sg" },
+  policy:    { label: "Policy",       cssVar: "--cat-policy" },
+  milestone: { label: "Milestone",    cssVar: "--cat-milestone" },
+};
+
+const EVENTS = [
+  { d: "1997-07-02", c: "crisis",    t: "Asian Financial Crisis begins", b: "Thailand floats the baht and contagion sweeps Asian markets. The STI loses more than half its value over the following fourteen months." },
+  { d: "1998-09-01", c: "sg",        t: "Malaysia capital controls; CLOB frozen", b: "Kuala Lumpur imposes capital controls. Malaysian shares held by some 170,000 Singapore investors through CLOB International are frozen overnight." },
+  { d: "1998-09-04", c: "milestone", t: "Asian-crisis low: 805", b: "The STI bottoms at 805 — roughly 60% below its 1996 highs — then stages one of the sharpest recoveries in its history." },
+  { d: "2000-01-03", c: "milestone", t: "Dot-com era peak: 2,583", b: "The index has more than tripled off the 1998 low as tech mania peaks. The global tech bust then grinds the STI down through 2001." },
+  { d: "2001-09-11", c: "crisis",    t: "September 11 attacks", b: "Global markets sell off. With the tech bust already underway, the STI sinks toward 1,200 in the weeks that follow." },
+  { d: "2003-03-10", c: "crisis",    t: "SARS trough: 1,214", b: "Singapore is among the economies hit hardest by SARS. The STI bottoms two days before the WHO's global alert — and a five-year bull run begins." },
+  { d: "2005-04-18", c: "sg",        t: "Integrated Resorts approved", b: "Parliament approves two casino Integrated Resorts at Marina Bay and Sentosa, kicking off a tourism, construction and property boom." },
+  { d: "2007-10-11", c: "milestone", t: "Pre-crisis record: 3,876", b: "A five-year bull run powered by China, commodities and property peaks at 3,875.77 — a closing record that stands for over seventeen years, until January 2025." },
+  { d: "2008-01-10", c: "policy",    t: "STI revamped to 30 stocks", b: "The index moves to FTSE methodology and is slimmed down to 30 constituents — the modern STI takes shape." },
+  { d: "2008-09-15", c: "crisis",    t: "Lehman Brothers collapses", b: "The Global Financial Crisis turns systemic. The Minibonds saga hits Singapore retail investors, and the STI halves in six months." },
+  { d: "2009-03-09", c: "milestone", t: "GFC low: 1,457", b: "Down 62% from the 2007 peak. Coordinated global stimulus then ignites a rebound that roughly doubles the index within a year." },
+  { d: "2010-04-27", c: "sg",        t: "Marina Bay Sands opens", b: "Both Integrated Resorts open in 2010 — Resorts World Sentosa in February, MBS in April — transforming tourism receipts and Genting Singapore's fortunes." },
+  { d: "2011-08-08", c: "crisis",    t: "US downgrade & euro crisis", b: "S&P strips the United States of its AAA rating amid the eurozone debt crisis. The STI drops about 20% over the quarter." },
+  { d: "2013-06-20", c: "policy",    t: "Taper tantrum", b: "The Fed signals the end of quantitative easing. Yield plays sell off hard — a warning shot for the REIT-heavy Singapore market." },
+  { d: "2013-10-04", c: "sg",        t: "Penny stock crash", b: "Blumont, Asiasons and LionGold collapse, erasing about S$8 billion in days. The scandal weighs on SGX sentiment and volumes for years." },
+  { d: "2015-08-24", c: "crisis",    t: "China devaluation 'Black Monday'", b: "A surprise yuan devaluation triggers a global rout. With oil in freefall, the STI slides into a bear market through early 2016." },
+  { d: "2016-06-24", c: "crisis",    t: "Brexit vote", b: "The UK votes to leave the EU. The STI dips with global markets but recovers within weeks." },
+  { d: "2016-07-28", c: "sg",        t: "Swiber default", b: "Swiber's collapse marks the depth of the offshore & marine debt crisis hobbling Keppel, Sembcorp Marine and the local banks' oil & gas loan books." },
+  { d: "2018-03-22", c: "crisis",    t: "US–China trade war begins", b: "Washington announces its first China-specific tariffs. Trade-dependent Singapore gives back its early-2018 gains over the year." },
+  { d: "2020-01-23", c: "crisis",    t: "COVID-19 reaches Singapore", b: "Wuhan locks down and Singapore confirms its first case the same day. Within two months the STI loses a third of its value." },
+  { d: "2020-03-23", c: "milestone", t: "COVID low: 2,233", b: "The pandemic trough — a 32% collapse in nine weeks — is followed by an uneven, two-year recovery." },
+  { d: "2020-04-07", c: "sg",        t: "Circuit breaker begins", b: "Singapore enters its COVID lockdown. GDP shrinks a record 5.4% in 2020, and SIA launches a S$15 billion rescue rights issue." },
+  { d: "2022-03-16", c: "policy",    t: "Fed's fastest hiking cycle", b: "The Fed begins its steepest rate rises in decades. Net interest margins swell at DBS, OCBC and UOB — together roughly half the STI's weight." },
+  { d: "2023-03-10", c: "crisis",    t: "SVB & Credit Suisse stress", b: "US regional-bank failures and the Credit Suisse rescue rattle global financials. Singapore's banks prove resilient." },
+  { d: "2024-08-05", c: "crisis",    t: "Yen carry-trade unwind", b: "A violent unwind of yen-funded trades hits Asia. The Nikkei has its worst day since 1987; the STI falls 4.1%." },
+  { d: "2025-02-21", c: "policy",    t: "MAS S$5b market revival plan", b: "The MAS-led review group unveils a S$5 billion Equity Market Development Programme plus tax incentives to revitalise the Singapore market." },
+  { d: "2025-04-07", c: "crisis",    t: "'Liberation Day' tariff crash", b: "Sweeping US tariffs trigger the STI's worst one-day fall since 2008: −7.5%. A 90-day tariff pause two days later sparks a V-shaped rebound." },
+  { d: "2025-07-02", c: "milestone", t: "STI crosses 4,000", b: "The index closes above 4,000 for the first time, lifted by bank earnings, MAS market reforms and returning fund inflows." },
+];
+const dayOf = iso => Math.round(Date.parse(iso + "T00:00:00Z") / 86400000);
+EVENTS.forEach(e => e.day = dayOf(e.d));
+
+const GROUPS = [
+  ["Index", ["^STI"]],
+  ["Banks & exchange", ["D05.SI", "O39.SI", "U11.SI", "S68.SI"]],
+  ["Telco & tech", ["Z74.SI", "V03.SI"]],
+  ["Industrials & transport", ["S63.SI", "C6L.SI", "U96.SI", "BN4.SI", "5E2.SI", "BS6.SI", "S58.SI", "C52.SI"]],
+  ["Consumer & conglomerates", ["F34.SI", "Y92.SI", "G13.SI", "D01.SI", "J36.SI", "C07.SI"]],
+  ["Property", ["H78.SI", "9CI.SI", "C09.SI", "U14.SI"]],
+  ["REITs", ["C38U.SI", "A17U.SI", "M44U.SI", "ME8U.SI", "N2IU.SI", "J69U.SI"]],
+];
+
+/* ---------------- state ---------------- */
+const state = {
+  ticker: "^STI",
+  t0: 0, t1: 0,           // view range, epoch days
+  log: false,
+  cats: new Set(Object.keys(CATS)),
+  sel: -1,                 // selected event index
+  preset: "Max",
+};
+
+/* ---------------- helpers ---------------- */
+const $ = id => document.getElementById(id);
+const css = name => getComputedStyle(document.documentElement).getPropertyValue(name).trim();
+const cur = () => SERIES[state.ticker];
+const MONTHS = ["Jan","Feb","Mar","Apr","May","Jun","Jul","Aug","Sep","Oct","Nov","Dec"];
+function dstr(day, long) {
+  const dt = new Date(day * 86400000);
+  return long ? `${dt.getUTCDate()} ${MONTHS[dt.getUTCMonth()]} ${dt.getUTCFullYear()}`
+              : `${MONTHS[dt.getUTCMonth()]} ${dt.getUTCFullYear()}`;
+}
+const fmtP = (v, dp) => v.toLocaleString("en-SG", { minimumFractionDigits: dp, maximumFractionDigits: dp });
+const priceDp = v => (v >= 100 ? 0 : v >= 10 ? 2 : 3);
+const fmtPct = v => (v >= 0 ? "+" : "") + (Math.abs(v) >= 100 ? v.toFixed(0) : v.toFixed(1)) + "%";
+function lowerBound(arr, x) { let lo = 0, hi = arr.length; while (lo < hi) { const m = (lo + hi) >> 1; arr[m] < x ? lo = m + 1 : hi = m; } return lo; }
+function nearestIdx(s, day) {
+  const i = lowerBound(s.d, day);
+  if (i <= 0) return 0;
+  if (i >= s.d.length) return s.d.length - 1;
+  return (day - s.d[i - 1] <= s.d[i] - day) ? i - 1 : i;
+}
+function closeAt(s, day) { return s.c[nearestIdx(s, day)]; }
+const extent = s => [s.d[0], s.d[s.d.length - 1]];
+
+/* ---------------- canvases ---------------- */
+const wrap = $("chartWrap"), base = $("base"), overlay = $("overlay");
+const ovWrap = $("ovWrap"), ovCanvas = $("ovCanvas");
+const PAD = { l: 52, r: 14, t: 34, b: 26 };  // t leaves a lane for event flags
+let W = 0, H = 0, OW = 0, OH = 0;
+
+function sizeCanvases() {
+  const dpr = window.devicePixelRatio || 1;
+  W = wrap.clientWidth; H = wrap.clientHeight;
+  for (const c of [base, overlay]) { c.width = W * dpr; c.height = H * dpr; c.getContext("2d").setTransform(dpr, 0, 0, dpr, 0, 0); }
+  OW = ovWrap.clientWidth; OH = ovWrap.clientHeight;
+  ovCanvas.width = OW * dpr; ovCanvas.height = OH * dpr;
+  ovCanvas.getContext("2d").setTransform(dpr, 0, 0, dpr, 0, 0);
+}
+
+const xPx = day => PAD.l + (day - state.t0) / (state.t1 - state.t0) * (W - PAD.l - PAD.r);
+const pxDay = px => state.t0 + (px - PAD.l) / (W - PAD.l - PAD.r) * (state.t1 - state.t0);
+let yLo = 0, yHi = 1;
+function yPx(v) {
+  const a = state.log ? Math.log10(yLo) : yLo, b = state.log ? Math.log10(yHi) : yHi;
+  const t = ((state.log ? Math.log10(v) : v) - a) / (b - a);
+  return H - PAD.b - t * (H - PAD.t - PAD.b);
+}
+
+function viewSlice() {
+  const s = cur();
+  let i0 = lowerBound(s.d, state.t0), i1 = lowerBound(s.d, state.t1 + 1);
+  i0 = Math.max(0, i0 - 1); i1 = Math.min(s.d.length, i1 + 1);
+  return [i0, i1];
+}
+
+function niceTicksLinear(lo, hi, n) {
+  const span = hi - lo, step0 = span / n, mag = Math.pow(10, Math.floor(Math.log10(step0)));
+  const step = [1, 2, 5, 10].map(m => m * mag).find(s => span / s <= n) || 10 * mag;
+  const out = [];
+  for (let v = Math.ceil(lo / step) * step; v <= hi + 1e-9; v += step) out.push(v);
+  return out;
+}
+function ticksLog(lo, hi) {
+  const out = [];
+  for (let e = Math.floor(Math.log10(lo)); e <= Math.ceil(Math.log10(hi)); e++)
+    for (const m of [1, 2, 5]) { const v = m * Math.pow(10, e); if (v >= lo && v <= hi) out.push(v); }
+  return out.length >= 3 ? out : niceTicksLinear(lo, hi, 5);
+}
+function xTicks() {
+  const spanY = (state.t1 - state.t0) / 365.25;
+  const stepM = spanY > 24 ? 60 : spanY > 12 ? 24 : spanY > 5 ? 12 : spanY > 2.5 ? 6 : spanY > 1 ? 3 : 1;
+  const d0 = new Date(state.t0 * 86400000);
+  let y = d0.getUTCFullYear(), m = d0.getUTCMonth();
+  m = Math.ceil((y * 12 + m) / stepM) * stepM; y = Math.floor(m / 12); m %= 12;
+  const out = [];
+  while (true) {
+    const day = Date.UTC(y, m, 1) / 86400000;
+    if (day > state.t1) break;
+    out.push({ day, label: stepM >= 12 ? String(y) : `${MONTHS[m]} '${String(y).slice(2)}` });
+    m += stepM; y += Math.floor(m / 12); m %= 12;
+  }
+  return out;
+}
+
+function visibleEvents() {
+  const s = cur(), [lo] = extent(s);
+  return EVENTS.map((e, i) => ({ ...e, i }))
+    .filter(e => state.cats.has(e.c) && e.day >= lo);
+}
+
+/* ---------------- main render ---------------- */
+function renderMain() {
+  const ctx = base.getContext("2d");
+  ctx.clearRect(0, 0, W, H);
+  const s = cur(), [i0, i1] = viewSlice();
+  if (i1 - i0 < 2) return;
+
+  let lo = Infinity, hi = -Infinity;
+  for (let i = i0; i < i1; i++) { const v = s.c[i]; if (v < lo) lo = v; if (v > hi) hi = v; }
+  const padF = state.log ? 1.06 : (hi - lo) * 0.07 || lo * 0.05;
+  yLo = state.log ? lo / padF : Math.max(0, lo - padF); yHi = state.log ? hi * padF : hi + padF;
+
+  // grid + y labels
+  ctx.font = "11px system-ui, sans-serif";
+  const yt = state.log ? ticksLog(yLo, yHi) : niceTicksLinear(yLo, yHi, 6);
+  ctx.strokeStyle = css("--grid"); ctx.fillStyle = css("--muted"); ctx.lineWidth = 1;
+  for (const v of yt) {
+    const y = Math.round(yPx(v)) + 0.5;
+    ctx.beginPath(); ctx.moveTo(PAD.l, y); ctx.lineTo(W - PAD.r, y); ctx.stroke();
+    ctx.textAlign = "right"; ctx.textBaseline = "middle";
+    ctx.fillText(v >= 1000 ? (v / 1000) + "k" : String(+v.toFixed(2)), PAD.l - 7, y);
+  }
+  // x labels + baseline
+  ctx.textAlign = "center"; ctx.textBaseline = "top";
+  for (const t of xTicks()) ctx.fillText(t.label, xPx(t.day), H - PAD.b + 7);
+  ctx.strokeStyle = css("--baseline");
+  ctx.beginPath(); ctx.moveTo(PAD.l, H - PAD.b + 0.5); ctx.lineTo(W - PAD.r, H - PAD.b + 0.5); ctx.stroke();
+
+  // decimate to per-pixel min/max
+  const plotW = W - PAD.l - PAD.r;
+  const pts = [];
+  if (i1 - i0 > plotW * 2) {
+    let px = -1, mn = 0, mx = 0, mnI = 0, mxI = 0;
+    for (let i = i0; i < i1; i++) {
+      const p = Math.round(xPx(s.d[i]));
+      if (p !== px) {
+        if (px >= 0) { if (mnI <= mxI) { pts.push([px, mn]); if (mxI !== mnI) pts.push([px, mx]); } else { pts.push([px, mx]); pts.push([px, mn]); } }
+        px = p; mn = mx = s.c[i]; mnI = mxI = i;
+      } else { if (s.c[i] < mn) { mn = s.c[i]; mnI = i; } if (s.c[i] > mx) { mx = s.c[i]; mxI = i; } }
+    }
+    if (px >= 0) pts.push([px, mn]);
+  } else {
+    for (let i = i0; i < i1; i++) pts.push([xPx(s.d[i]), s.c[i]]);
+  }
+
+  // area fill + line
+  const seriesCol = css("--series-1");
+  ctx.save();
+  ctx.beginPath(); ctx.rect(PAD.l, PAD.t, plotW, H - PAD.t - PAD.b); ctx.clip();
+  const grad = ctx.createLinearGradient(0, PAD.t, 0, H - PAD.b);
+  grad.addColorStop(0, seriesCol + "2e"); grad.addColorStop(1, seriesCol + "00");
+  ctx.beginPath();
+  pts.forEach(([x, v], k) => k ? ctx.lineTo(x, yPx(v)) : ctx.moveTo(x, yPx(v)));
+  ctx.strokeStyle = seriesCol; ctx.lineWidth = 2; ctx.lineJoin = "round"; ctx.stroke();
+  ctx.lineTo(pts[pts.length - 1][0], H - PAD.b); ctx.lineTo(pts[0][0], H - PAD.b); ctx.closePath();
+  ctx.fillStyle = grad; ctx.fill();
+  ctx.restore();
+
+  // event hairlines + flags
+  const surface = css("--surface-1");
+  for (const e of visibleEvents()) {
+    if (e.day < state.t0 || e.day > state.t1) continue;
+    const x = Math.round(xPx(e.day)) + 0.5, col = css(CATS[e.c].cssVar), isSel = e.i === state.sel;
+    ctx.strokeStyle = col; ctx.globalAlpha = isSel ? 0.9 : 0.30; ctx.lineWidth = isSel ? 2 : 1;
+    ctx.beginPath(); ctx.moveTo(x, PAD.t - 6); ctx.lineTo(x, H - PAD.b); ctx.stroke();
+    ctx.globalAlpha = 1;
+    ctx.beginPath(); ctx.arc(x, 16, isSel ? 7 : 5.5, 0, Math.PI * 2);
+    ctx.fillStyle = col; ctx.fill();
+    ctx.lineWidth = 2; ctx.strokeStyle = surface; ctx.stroke();
+  }
+  $("rangeLabel").textContent = dstr(state.t0, true) + " — " + dstr(state.t1, true);
+}
+
+/* ---------------- overview render ---------------- */
+function renderOverview() {
+  const ctx = ovCanvas.getContext("2d");
+  ctx.clearRect(0, 0, OW, OH);
+  const s = cur(), [lo0, hi0] = extent(s);
+  let lo = Infinity, hi = -Infinity;
+  for (const v of s.c) { if (v < lo) lo = v; if (v > hi) hi = v; }
+  const ox = day => (day - lo0) / (hi0 - lo0) * OW;
+  const oy = v => OH - 4 - (v - lo) / (hi - lo) * (OH - 10);
+  ctx.beginPath();
+  const stride = Math.max(1, Math.floor(s.d.length / OW / 2));
+  for (let i = 0; i < s.d.length; i += stride) { const x = ox(s.d[i]), y = oy(s.c[i]); i ? ctx.lineTo(x, y) : ctx.moveTo(x, y); }
+  ctx.strokeStyle = css("--muted"); ctx.lineWidth = 1; ctx.stroke();
+  // brush window
+  const bx0 = ox(state.t0), bx1 = ox(state.t1);
+  ctx.fillStyle = css("--series-1") + "22"; ctx.fillRect(bx0, 0, bx1 - bx0, OH);
+  ctx.strokeStyle = css("--series-1"); ctx.lineWidth = 1.5;
+  ctx.strokeRect(bx0 + 0.75, 0.75, bx1 - bx0 - 1.5, OH - 1.5);
+}
+
+/* ---------------- overlay: crosshair + tooltip ---------------- */
+const tooltip = $("tooltip");
+function clearOverlay() { overlay.getContext("2d").clearRect(0, 0, W, H); tooltip.style.display = "none"; }
+function hoveredEvent(mx, my) {
+  let best = null, bestDx = 7;
+  for (const e of visibleEvents()) {
+    if (e.day < state.t0 || e.day > state.t1) continue;
+    const dx = Math.abs(xPx(e.day) - mx);
+    if (dx < bestDx && (my < 30 || dx < 4)) { best = e; bestDx = dx; }
+  }
+  return best;
+}
+function drawOverlay(mx, my) {
+  const ctx = overlay.getContext("2d");
+  ctx.clearRect(0, 0, W, H);
+  if (mx < PAD.l || mx > W - PAD.r) { tooltip.style.display = "none"; return; }
+  const s = cur(), day = pxDay(mx), idx = nearestIdx(s, day);
+  const sx = xPx(s.d[idx]), sy = yPx(s.c[idx]);
+  ctx.strokeStyle = css("--baseline"); ctx.lineWidth = 1;
+  ctx.beginPath(); ctx.moveTo(Math.round(sx) + 0.5, PAD.t); ctx.lineTo(Math.round(sx) + 0.5, H - PAD.b); ctx.stroke();
+  ctx.beginPath(); ctx.arc(sx, sy, 4.5, 0, Math.PI * 2);
+  ctx.fillStyle = css("--series-1"); ctx.fill();
+  ctx.strokeStyle = css("--surface-1"); ctx.lineWidth = 2; ctx.stroke();
+
+  // tooltip content (textContent only — no innerHTML with data)
+  tooltip.textContent = "";
+  const add = (cls, txt) => { const el = document.createElement("div"); el.className = cls; el.textContent = txt; tooltip.appendChild(el); return el; };
+  add("d", dstr(s.d[idx], true));
+  add("p", fmtP(s.c[idx], priceDp(s.c[idx])));
+  const first = s.c[Math.min(lowerBound(s.d, state.t0), s.c.length - 1)];
+  add("r", fmtPct((s.c[idx] / first - 1) * 100) + " over shown range");
+  const ev = hoveredEvent(mx, my);
+  if (ev) {
+    const row = document.createElement("div"); row.className = "ev";
+    row.style.setProperty("--c", css(CATS[ev.c].cssVar));
+    const key = document.createElement("span"); key.className = "key";
+    const span = document.createElement("span"); span.textContent = ev.t;
+    row.append(key, span); tooltip.appendChild(row);
+    wrap.style.cursor = "pointer";
+  } else wrap.style.cursor = "crosshair";
+
+  tooltip.style.display = "block";
+  const tw = tooltip.offsetWidth;
+  tooltip.style.left = Math.min(Math.max(6, sx + (sx > W - tw - 40 ? -tw - 14 : 14)), W - tw - 6) + "px";
+  tooltip.style.top = Math.max(6, Math.min(my - 20, H - tooltip.offsetHeight - 10)) + "px";
+}
+
+/* ---------------- view changes ---------------- */
+function clampView() {
+  const [lo, hi] = extent(cur());
+  const span = Math.max(30, Math.min(state.t1 - state.t0, hi - lo));
+  state.t0 = Math.max(lo, Math.min(state.t0, hi - span));
+  state.t1 = state.t0 + span;
+}
+function setView(t0, t1, keepSel) {
+  state.t0 = t0; state.t1 = t1; clampView();
+  if (!keepSel) state.preset = "";
+  renderMain(); renderOverview(); clearOverlay(); refreshChrome();
+}
+function applyPreset(name) {
+  const [lo, hi] = extent(cur());
+  const yrs = { "1Y": 1, "3Y": 3, "5Y": 5, "10Y": 10, "20Y": 20 }[name];
+  state.preset = name;
+  setView(yrs ? hi - yrs * 365.25 : lo, hi, true);
+}
+
+/* ---------------- chrome: tiles, sidebar, events, table ---------------- */
+function refreshChrome() {
+  // range preset buttons
+  for (const b of $("ranges").children) b.setAttribute("aria-pressed", String(b.textContent === state.preset));
+  // tiles
+  const s = cur(), n = s.c.length, last = s.c[n - 1], prev = s.c[n - 2] || last;
+  let athV = -Infinity, athI = 0;
+  for (let i = 0; i < n; i++) if (s.c[i] > athV) { athV = s.c[i]; athI = i; }
+  const v0 = Math.min(lowerBound(s.d, state.t0), n - 1);
+  const v1 = Math.min(lowerBound(s.d, state.t1 + 1), n) - 1;
+  const viewChg = v1 > v0 ? (s.c[v1] / s.c[v0] - 1) * 100 : 0;
+  const dayChg = (last / prev - 1) * 100;
+  const tiles = [
+    ["Last close", fmtP(last, priceDp(last)), fmtPct(dayChg) + " on the day", dayChg],
+    ["Shown range", fmtPct(viewChg), dstr(state.t0) + " — " + dstr(state.t1), viewChg],
+    ["All-time high", fmtP(athV, priceDp(athV)), dstr(s.d[athI], true), null],
+    ["History since", String(new Date(s.d[0] * 86400000).getUTCFullYear()), n.toLocaleString() + " daily closes", null],
+  ];
+  const tl = $("tiles"); tl.textContent = "";
+  for (const [k, v, sub, delta] of tiles) {
+    const t = document.createElement("div"); t.className = "tile";
+    const ke = document.createElement("div"); ke.className = "k"; ke.textContent = k;
+    const ve = document.createElement("div"); ve.className = "v"; ve.textContent = v;
+    if (delta !== null) ve.classList.add(delta >= 0 ? "pos" : "neg");
+    const se = document.createElement("div"); se.className = "s"; se.textContent = sub;
+    t.append(ke, ve, se); tl.appendChild(t);
+  }
+  // sidebar % over current view
+  document.querySelectorAll(".tk").forEach(btn => {
+    const sym = btn.dataset.sym, sr = SERIES[sym];
+    const j0 = Math.min(lowerBound(sr.d, state.t0), sr.d.length - 1);
+    const j1 = Math.min(lowerBound(sr.d, state.t1 + 1), sr.d.length) - 1;
+    const pc = btn.querySelector(".pc");
+    if (j1 > j0) {
+      const chg = (sr.c[j1] / sr.c[j0] - 1) * 100;
+      pc.textContent = fmtPct(chg);
+      pc.className = "pc " + (chg >= 0 ? "pos" : "neg");
+    } else pc.textContent = "—";
+    btn.setAttribute("aria-current", String(sym === state.ticker));
+  });
+  refreshEventList();
+  buildYearTable();
+}
+
+function refreshEventList() {
+  const list = $("evList"); list.textContent = ""; list.scrollTop = 0;
+  const evs = visibleEvents();
+  let inView = 0;
+  for (const e of evs) {
+    const card = document.createElement("button");
+    card.type = "button"; card.className = "ev-card";
+    card.style.setProperty("--c", css(CATS[e.c].cssVar));
+    const out = e.day < state.t0 || e.day > state.t1;
+    if (out) card.classList.add("dim"); else inView++;
+    if (e.i === state.sel) card.classList.add("sel");
+    const dt = document.createElement("div"); dt.className = "dt";
+    dt.textContent = dstr(e.day, true) + " · " + CATS[e.c].label;
+    const tt = document.createElement("div"); tt.className = "tt"; tt.textContent = e.t;
+    const bb = document.createElement("div"); bb.className = "bb"; bb.textContent = e.b;
+    card.append(dt, tt, bb);
+    card.addEventListener("click", () => selectEvent(e.i, true));
+    list.appendChild(card);
+  }
+  $("evCount").textContent = `· ${inView} in view / ${evs.length} shown`;
+  // detail strip
+  const det = $("evDetail");
+  if (state.sel >= 0 && state.cats.has(EVENTS[state.sel].c)) {
+    const e = EVENTS[state.sel];
+    det.style.display = "block";
+    det.style.setProperty("--c", css(CATS[e.c].cssVar));
+    det.querySelector(".dt").textContent = dstr(e.day, true) + " · " + CATS[e.c].label +
+      " · " + state.ticker.replace("^STI", "STI") + " at " + fmtP(closeAt(cur(), e.day), priceDp(closeAt(cur(), e.day)));
+    det.querySelector(".tt").textContent = e.t;
+    det.querySelector(".bb").textContent = e.b;
+  } else det.style.display = "none";
+}
+
+function selectEvent(i, zoom) {
+  state.sel = (state.sel === i && !zoom) ? -1 : i;
+  if (zoom && state.sel >= 0) {
+    const e = EVENTS[i], half = Math.max(240, (state.t1 - state.t0) / 2 > 3000 ? 540 : 300);
+    setView(e.day - half, e.day + half);
+  } else { renderMain(); refreshChrome(); }
+}
+
+function buildYearTable() {
+  const s = cur(), tbl = $("yearTable"); tbl.textContent = "";
+  const head = tbl.insertRow();
+  for (const h of ["Year", "Close", "Change"]) { const th = document.createElement("th"); th.textContent = h; head.appendChild(th); }
+  let prevClose = null, lastYear = -1;
+  const rows = [];
+  for (let i = 0; i < s.d.length; i++) {
+    const y = new Date(s.d[i] * 86400000).getUTCFullYear();
+    if (y !== lastYear) { rows.push([y, s.c[i]]); lastYear = y; }
+    rows[rows.length - 1][1] = s.c[i];
+  }
+  for (const [y, close] of rows) {
+    const tr = tbl.insertRow();
+    tr.insertCell().textContent = y;
+    tr.insertCell().textContent = fmtP(close, priceDp(close));
+    const c = tr.insertCell();
+    if (prevClose !== null) { const chg = (close / prevClose - 1) * 100; c.textContent = fmtPct(chg); c.className = chg >= 0 ? "pos" : "neg"; }
+    else c.textContent = "—";
+    prevClose = close;
+  }
+}
+
+/* ---------------- build static chrome ---------------- */
+function buildControls() {
+  for (const name of ["1Y", "3Y", "5Y", "10Y", "20Y", "Max"]) {
+    const b = document.createElement("button"); b.type = "button"; b.textContent = name;
+    b.addEventListener("click", () => applyPreset(name));
+    $("ranges").appendChild(b);
+  }
+  for (const [key, cat] of Object.entries(CATS)) {
+    const c = document.createElement("button");
+    c.type = "button"; c.className = "chip"; c.setAttribute("aria-pressed", "true");
+    c.style.setProperty("--c", `var(${cat.cssVar})`);
+    const dot = document.createElement("span"); dot.className = "dot";
+    c.append(dot, document.createTextNode(cat.label));
+    c.addEventListener("click", () => {
+      state.cats.has(key) ? state.cats.delete(key) : state.cats.add(key);
+      c.setAttribute("aria-pressed", String(state.cats.has(key)));
+      renderMain(); refreshEventList();
+    });
+    $("catChips").appendChild(c);
+  }
+  $("scaleSeg").addEventListener("click", ev => {
+    const b = ev.target.closest("button"); if (!b) return;
+    state.log = b.dataset.scale === "log";
+    for (const x of $("scaleSeg").children) x.setAttribute("aria-pressed", String(x === b));
+    renderMain(); clearOverlay();
+  });
+  $("evClose").addEventListener("click", () => { state.sel = -1; renderMain(); refreshChrome(); });
+}
+
+function buildSidebar() {
+  const sb = $("sidebar");
+  for (const [label, syms] of GROUPS) {
+    const g = document.createElement("div"); g.className = "grp"; g.textContent = label; sb.appendChild(g);
+    for (const sym of syms) {
+      if (!SERIES[sym]) continue;
+      const b = document.createElement("button");
+      b.type = "button"; b.className = "tk"; b.dataset.sym = sym;
+      const nm = document.createElement("span"); nm.className = "nm"; nm.textContent = SERIES[sym].name;
+      const pc = document.createElement("span"); pc.className = "pc";
+      b.append(nm, pc);
+      b.addEventListener("click", () => switchTicker(sym));
+      sb.appendChild(b);
+    }
+  }
+}
+
+function switchTicker(sym) {
+  state.ticker = sym; state.sel = -1;
+  const s = SERIES[sym], [lo, hi] = extent(s);
+  $("chartName").textContent = s.name;
+  $("chartCode").textContent = sym === "^STI" ? "SGX index · 1987–present" : "SGX: " + sym.replace(".SI", "");
+  if (state.preset) applyPreset(state.preset);
+  else setView(Math.max(lo, state.t0), Math.min(hi, state.t1), true);
+  renderMain(); renderOverview(); clearOverlay(); refreshChrome();
+}
+
+/* ---------------- pointer interactions: main chart ---------------- */
+let dragging = null;
+wrap.addEventListener("pointerdown", ev => {
+  const r = wrap.getBoundingClientRect();
+  dragging = { x: ev.clientX - r.left, t0: state.t0, t1: state.t1, moved: false };
+  wrap.setPointerCapture(ev.pointerId);
+});
+wrap.addEventListener("pointermove", ev => {
+  const r = wrap.getBoundingClientRect(), mx = ev.clientX - r.left, my = ev.clientY - r.top;
+  if (dragging) {
+    const dpx = mx - dragging.x;
+    if (Math.abs(dpx) > 3) dragging.moved = true;
+    const dDays = -dpx / (W - PAD.l - PAD.r) * (dragging.t1 - dragging.t0);
+    setView(dragging.t0 + dDays, dragging.t1 + dDays);
+    return;
+  }
+  drawOverlay(mx, my);
+});
+wrap.addEventListener("pointerup", ev => {
+  const r = wrap.getBoundingClientRect(), mx = ev.clientX - r.left, my = ev.clientY - r.top;
+  if (dragging && !dragging.moved) {
+    const e = hoveredEvent(mx, my);
+    if (e) selectEvent(e.i, false);
+  }
+  dragging = null;
+});
+wrap.addEventListener("pointerleave", () => { if (!dragging) clearOverlay(); });
+wrap.addEventListener("wheel", ev => {
+  ev.preventDefault();
+  const r = wrap.getBoundingClientRect(), mx = ev.clientX - r.left;
+  const f = Math.exp(ev.deltaY * 0.0016), c = pxDay(mx);
+  setView(c - (c - state.t0) * f, c + (state.t1 - c) * f);
+  drawOverlay(mx, ev.clientY - r.top);
+}, { passive: false });
+wrap.addEventListener("dblclick", () => applyPreset("Max"));
+
+/* ---------------- pointer interactions: overview brush ---------------- */
+let ovDrag = null;
+function ovDayAt(px) { const [lo, hi] = extent(cur()); return lo + px / OW * (hi - lo); }
+ovWrap.addEventListener("pointerdown", ev => {
+  const r = ovWrap.getBoundingClientRect(), x = ev.clientX - r.left;
+  const [lo, hi] = extent(cur());
+  const bx0 = (state.t0 - lo) / (hi - lo) * OW, bx1 = (state.t1 - lo) / (hi - lo) * OW;
+  ovDrag = (x > bx0 + 5 && x < bx1 - 5)
+    ? { mode: "move", x, t0: state.t0, t1: state.t1 }
+    : { mode: "new", anchor: ovDayAt(x) };
+  ovWrap.setPointerCapture(ev.pointerId);
+  ovWrap.style.cursor = "grabbing";
+});
+ovWrap.addEventListener("pointermove", ev => {
+  if (!ovDrag) return;
+  const r = ovWrap.getBoundingClientRect(), x = ev.clientX - r.left;
+  if (ovDrag.mode === "move") {
+    const [lo, hi] = extent(cur());
+    const dDays = (x - ovDrag.x) / OW * (hi - lo);
+    setView(ovDrag.t0 + dDays, ovDrag.t1 + dDays);
+  } else {
+    const a = ovDrag.anchor, b = ovDayAt(x);
+    if (Math.abs(b - a) > 20) setView(Math.min(a, b), Math.max(a, b));
+  }
+});
+["pointerup", "pointercancel"].forEach(t => ovWrap.addEventListener(t, () => { ovDrag = null; ovWrap.style.cursor = "grab"; }));
+
+/* ---------------- theme ---------------- */
+$("themeBtn").addEventListener("click", () => {
+  const root = document.documentElement;
+  const sysDark = matchMedia("(prefers-color-scheme: dark)").matches;
+  const nowDark = root.dataset.theme ? root.dataset.theme === "dark" : sysDark;
+  root.dataset.theme = nowDark ? "light" : "dark";
+});
+new MutationObserver(() => { renderMain(); renderOverview(); clearOverlay(); refreshChrome(); })
+  .observe(document.documentElement, { attributes: true, attributeFilter: ["data-theme"] });
+matchMedia("(prefers-color-scheme: dark)").addEventListener("change", () => { renderMain(); renderOverview(); refreshChrome(); });
+
+/* ---------------- boot ---------------- */
+buildControls();
+buildSidebar();
+new ResizeObserver(() => { sizeCanvases(); renderMain(); renderOverview(); }).observe(wrap);
+sizeCanvases();
+switchTicker("^STI");
+applyPreset("Max");
+</script>
