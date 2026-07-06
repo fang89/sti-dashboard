@@ -57,7 +57,13 @@
   }
   .theme-btn:hover { color: var(--ink-1); }
 
-  .tiles { display: grid; grid-template-columns: repeat(auto-fit, minmax(160px, 1fr)); gap: 10px; margin: 14px 0; }
+  .tiles { display: grid; grid-template-columns: minmax(240px, 1.6fr) repeat(3, minmax(150px, 1fr)); gap: 10px; margin: 14px 0; }
+  @media (max-width: 800px) { .tiles { grid-template-columns: 1fr 1fr; } }
+  .tile.profile .ph { display: flex; align-items: center; gap: 7px; }
+  .tile.profile .ph .lg, .tile.profile .ph .mono { width: 22px; height: 22px; }
+  .tile.profile .pn { font-weight: 650; font-size: 14px; }
+  .tile.profile .pb { font-size: 11.5px; line-height: 1.35; color: var(--ink-2); margin-top: 4px; }
+  .tile.profile .pm { font-size: 13px; font-weight: 650; margin-top: 5px; }
   .tile { background: var(--surface-1); border: 1px solid var(--border); border-radius: 10px; padding: 10px 14px; }
   .tile .k { font-size: 11px; text-transform: uppercase; letter-spacing: 0.06em; color: var(--muted); }
   .tile .v { font-size: 22px; font-weight: 650; margin-top: 2px; }
@@ -223,12 +229,14 @@
 <script src="data.js"></script>
 <script src="logos.js"></script>
 <script src="earnings.js"></script>
+<script src="profiles.js"></script>
 <script>
 "use strict";
 /* ---------------- data & config ---------------- */
 const SERIES = window.STI_DATA.series;
 const LOGOS = window.STI_LOGOS || {};
 const EARN = window.STI_EARNINGS || {};
+const PROFILES = window.STI_PROFILES || {};
 document.getElementById("genDate").textContent = "fetched " + window.STI_DATA.generated;
 
 const CATS = {
@@ -645,9 +653,24 @@ function refreshChrome() {
     ["Last close", fmtP(last, priceDp(last)), fmtPct(dayChg) + " on the day", dayChg],
     ["Shown range", fmtPct(viewChg), dstr(state.t0) + " — " + dstr(state.t1), viewChg],
     ["All-time high", fmtP(athV, priceDp(athV)), dstr(s.d[athI], true), null],
-    ["History since", String(new Date(s.d[0] * 86400000).getUTCFullYear()), n.toLocaleString() + " daily closes", null],
   ];
   const tl = $("tiles"); tl.textContent = "";
+  {   // company profile tile, leftmost
+    const prof = PROFILES[state.ticker] || {};
+    const pt = document.createElement("div"); pt.className = "tile profile";
+    const ph = document.createElement("div"); ph.className = "ph";
+    const pn = document.createElement("span"); pn.className = "pn"; pn.textContent = s.name;
+    ph.append(logoEl(state.ticker), pn);
+    const pb = document.createElement("div"); pb.className = "pb";
+    pb.textContent = prof.blurb || "";
+    const pm = document.createElement("div"); pm.className = "pm";
+    if (prof.mcap) {
+      const sign = prof.cur === "USD" ? "US$" : "S$";
+      pm.textContent = "Market cap " + sign + (prof.mcap / 1e9).toFixed(1) + "b" +
+        (state.ticker === "^STI" ? " (combined)" : "");
+    }
+    pt.append(ph, pb, pm); tl.appendChild(pt);
+  }
   for (const [k, v, sub, delta] of tiles) {
     const t = document.createElement("div"); t.className = "tile";
     const ke = document.createElement("div"); ke.className = "k"; ke.textContent = k;
