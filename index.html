@@ -421,28 +421,29 @@ function ticksLog(lo, hi) {
   return out.length >= 3 ? out : niceTicksLinear(lo, hi, 5);
 }
 function xTicks() {
+  const maxN = Math.max(3, Math.floor((W - PAD.l - PAD.r) / 64));   // labels the width can fit
   const spanD = state.t1 - state.t0;
   if (spanD <= 45) {                    // day-level ticks for 1W / 1M views
-    const step = spanD <= 10 ? 1 : 7;
-    const out = [];
+    const all = [];
     for (let day = Math.ceil(state.t0); day <= state.t1; day++) {
       const dt = new Date(day * 86400000);
-      if (step === 7 && dt.getUTCDay() !== 1) continue;   // Mondays
-      out.push({ day, label: dt.getUTCDate() + " " + MONTHS[dt.getUTCMonth()] });
+      if (spanD > 10 && dt.getUTCDay() !== 1) continue;   // Mondays
+      all.push({ day, label: dt.getUTCDate() + " " + MONTHS[dt.getUTCMonth()] });
     }
-    return out;
+    const k = Math.ceil(all.length / maxN);
+    return all.filter((_, i) => i % k === 0);
   }
-  const spanY = (state.t1 - state.t0) / 365.25;
-  const stepM = spanY > 24 ? 60 : spanY > 12 ? 24 : spanY > 5 ? 12 : spanY > 2.5 ? 6 : spanY > 1 ? 3 : 1;
+  const totalM = spanD / 30.44;
+  const stepM = [1, 2, 3, 6, 12, 24, 60, 120].find(s => totalM / s <= maxN) || 240;
   const d0 = new Date(state.t0 * 86400000);
-  let y = d0.getUTCFullYear(), m = d0.getUTCMonth();
-  m = Math.ceil((y * 12 + m) / stepM) * stepM; y = Math.floor(m / 12); m %= 12;
+  let m = Math.ceil((d0.getUTCFullYear() * 12 + d0.getUTCMonth()) / stepM) * stepM;
   const out = [];
   while (true) {
-    const day = Date.UTC(y, m, 1) / 86400000;
+    const y = Math.floor(m / 12), mo = m % 12;
+    const day = Date.UTC(y, mo, 1) / 86400000;
     if (day > state.t1) break;
-    out.push({ day, label: stepM >= 12 ? String(y) : `${MONTHS[m]} '${String(y).slice(2)}` });
-    m += stepM; y += Math.floor(m / 12); m %= 12;
+    out.push({ day, label: stepM >= 12 ? String(y) : MONTHS[mo] + " '" + String(y).slice(2) });
+    m += stepM;
   }
   return out;
 }
@@ -554,9 +555,10 @@ function renderMain() {
         m.box = { x: bx, y: by, w: bw, h: bh };
       }
     }
-    ctx.beginPath(); ctx.arc(x, y, isSel ? 6 : 4.5, 0, Math.PI * 2);
-    ctx.fillStyle = col; ctx.fill();
-    ctx.lineWidth = 2; ctx.strokeStyle = surface; ctx.stroke();
+    const quiet = !labelMode && e.c === "earnings" && !isSel;   // dense view: earnings recede
+    ctx.beginPath(); ctx.arc(x, y, isSel ? 6 : quiet ? 2.5 : 4.5, 0, Math.PI * 2);
+    ctx.fillStyle = col; ctx.globalAlpha = quiet ? 0.6 : 1; ctx.fill(); ctx.globalAlpha = 1;
+    if (!quiet) { ctx.lineWidth = 2; ctx.strokeStyle = surface; ctx.stroke(); }
     evMarkers.push(m);
   }
   $("rangeLabel").textContent = dstr(state.t0, true) + " — " + dstr(state.t1, true);
