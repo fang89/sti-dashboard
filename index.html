@@ -8,6 +8,7 @@
     --grid: #e1e0d9; --baseline: #c3c2b7; --border: rgba(11,11,11,0.10);
     --series-1: #2a78d6; --up: #006300; --down: #d03b3b;
     --cat-crisis: #e34948; --cat-sg: #1baf7a; --cat-policy: #4a3aa7; --cat-milestone: #eda100; --cat-earnings: #eb6834;
+    --bm-gspc: #4a3aa7; --bm-ixic: #e87ba4; --bm-hsi: #e34948; --bm-n225: #1baf7a; --bm-btc: #eb6834; --bm-gold: #eda100;
   }
   @media (prefers-color-scheme: dark) {
     :root {
@@ -16,6 +17,7 @@
       --grid: #2c2c2a; --baseline: #383835; --border: rgba(255,255,255,0.10);
       --series-1: #3987e5; --up: #0ca30c; --down: #e66767;
       --cat-crisis: #e66767; --cat-sg: #199e70; --cat-policy: #9085e9; --cat-milestone: #c98500; --cat-earnings: #d95926;
+      --bm-gspc: #9085e9; --bm-ixic: #d55181; --bm-hsi: #e66767; --bm-n225: #199e70; --bm-btc: #d95926; --bm-gold: #c98500;
     }
   }
   :root[data-theme="light"] {
@@ -24,6 +26,7 @@
     --grid: #e1e0d9; --baseline: #c3c2b7; --border: rgba(11,11,11,0.10);
     --series-1: #2a78d6; --up: #006300; --down: #d03b3b;
     --cat-crisis: #e34948; --cat-sg: #1baf7a; --cat-policy: #4a3aa7; --cat-milestone: #eda100; --cat-earnings: #eb6834;
+    --bm-gspc: #4a3aa7; --bm-ixic: #e87ba4; --bm-hsi: #e34948; --bm-n225: #1baf7a; --bm-btc: #eb6834; --bm-gold: #eda100;
   }
   :root[data-theme="dark"] {
     --surface-1: #1a1a19; --plane: #0d0d0d;
@@ -31,6 +34,7 @@
     --grid: #2c2c2a; --baseline: #383835; --border: rgba(255,255,255,0.10);
     --series-1: #3987e5; --up: #0ca30c; --down: #e66767;
     --cat-crisis: #e66767; --cat-sg: #199e70; --cat-policy: #9085e9; --cat-milestone: #c98500; --cat-earnings: #d95926;
+    --bm-gspc: #9085e9; --bm-ixic: #d55181; --bm-hsi: #e66767; --bm-n225: #199e70; --bm-btc: #d95926; --bm-gold: #c98500;
   }
   * { box-sizing: border-box; }
   html, body { margin: 0; }
@@ -83,6 +87,7 @@
   .seg button:last-child { border-right: 0; }
   .seg button:hover { color: var(--ink-1); }
   .seg button[aria-pressed="true"] { background: var(--series-1); color: #fff; }
+  .seg.dim { opacity: 0.45; pointer-events: none; }
   .chips { display: inline-flex; gap: 6px; flex-wrap: wrap; }
   .chip {
     display: inline-flex; align-items: center; gap: 6px; cursor: pointer;
@@ -200,6 +205,8 @@
       <button type="button" data-scale="log" aria-pressed="false">Log</button>
     </div>
     <div class="chips" id="catChips" role="group" aria-label="Event categories"></div>
+    <span class="hint" id="benchHint">compare</span>
+    <div class="chips" id="benchChips" role="group" aria-label="Compare against benchmarks"></div>
     <span class="hint">scroll to zoom · drag to pan · click a flag or card for the story</span>
   </div>
 
@@ -244,6 +251,7 @@
 </div>
 
 <script src="data.js"></script>
+<script src="benchmarks.js"></script>
 <script src="logos.js"></script>
 <script src="earnings.js"></script>
 <script src="profiles.js"></script>
@@ -251,6 +259,11 @@
 "use strict";
 /* ---------------- data & config ---------------- */
 const SERIES = window.STI_DATA.series;
+const BENCH = (window.STI_BENCH || {}).series || {};
+const BENCH_ORDER = [        // fixed color assignment — color follows the benchmark
+  ["^GSPC", "--bm-gspc"], ["^IXIC", "--bm-ixic"], ["^HSI", "--bm-hsi"],
+  ["^N225", "--bm-n225"], ["BTC-USD", "--bm-btc"], ["GC=F", "--bm-gold"],
+];
 const LOGOS = window.STI_LOGOS || {};
 const EARN = window.STI_EARNINGS || {};
 const PROFILES = window.STI_PROFILES || {};
@@ -352,6 +365,7 @@ const state = {
   ticker: "^STI",
   t0: 0, t1: 0,           // view range, epoch days
   log: false,
+  bench: new Set(),        // active comparison benchmarks
   cats: new Set(Object.keys(CATS)),
   sel: -1,                 // selected event index
   preset: "1Y",
@@ -398,9 +412,13 @@ function sizeCanvases() {
 const xPx = day => PAD.l + (day - state.t0) / (state.t1 - state.t0) * (W - PAD.l - PAD.r);
 const pxDay = px => state.t0 + (px - PAD.l) / (W - PAD.l - PAD.r) * (state.t1 - state.t0);
 let yLo = 0, yHi = 1;
+let logNow = false;            // log scale actually in effect (off while comparing)
+let curComps = [];             // active benchmarks with view-start bases, set by renderMain
+let mainBase = 1;
+const cmpOn = () => state.bench.size > 0;
 function yPx(v) {
-  const a = state.log ? Math.log10(yLo) : yLo, b = state.log ? Math.log10(yHi) : yHi;
-  const t = ((state.log ? Math.log10(v) : v) - a) / (b - a);
+  const a = logNow ? Math.log10(yLo) : yLo, b = logNow ? Math.log10(yHi) : yHi;
+  const t = ((logNow ? Math.log10(v) : v) - a) / (b - a);
   return H - PAD.b - t * (H - PAD.t - PAD.b);
 }
 
@@ -459,26 +477,78 @@ function visibleEvents() {
 }
 
 /* ---------------- main render ---------------- */
+// % change vs the close at view start, the shared scale of compare mode
+const reb = (v, base) => (v / base - 1) * 100;
+function baseAt(sr) {
+  return sr.c[Math.min(lowerBound(sr.d, state.t0), sr.c.length - 1)];
+}
+function benchSlice(sr) {
+  let j0 = lowerBound(sr.d, state.t0), j1 = lowerBound(sr.d, state.t1 + 1);
+  j0 = Math.max(0, j0 - 1); j1 = Math.min(sr.d.length, j1 + 1);
+  return [j0, j1];
+}
+// per-pixel min/max decimation shared by the main line and benchmark lines
+function linePts(sr, j0, j1, toV) {
+  const plotW = W - PAD.l - PAD.r, pts = [];
+  if (j1 - j0 > plotW * 2) {
+    let px = -1, mn = 0, mx = 0, mnI = 0, mxI = 0;
+    for (let i = j0; i < j1; i++) {
+      const v = toV(sr.c[i]), p = Math.round(xPx(sr.d[i]));
+      if (p !== px) {
+        if (px >= 0) { if (mnI <= mxI) { pts.push([px, mn]); if (mxI !== mnI) pts.push([px, mx]); } else { pts.push([px, mx]); pts.push([px, mn]); } }
+        px = p; mn = mx = v; mnI = mxI = i;
+      } else { if (v < mn) { mn = v; mnI = i; } if (v > mx) { mx = v; mxI = i; } }
+    }
+    if (px >= 0) pts.push([px, mn]);
+  } else {
+    for (let i = j0; i < j1; i++) pts.push([xPx(sr.d[i]), toV(sr.c[i])]);
+  }
+  return pts;
+}
+
 function renderMain() {
   const ctx = base.getContext("2d");
   ctx.clearRect(0, 0, W, H);
   const s = cur(), [i0, i1] = viewSlice();
   if (i1 - i0 < 2) return;
 
+  const cmp = cmpOn();
+  logNow = state.log && !cmp;
+  mainBase = baseAt(s);
+  curComps = !cmp ? [] : BENCH_ORDER
+    .filter(([sym]) => state.bench.has(sym) && BENCH[sym])
+    .map(([sym, cssVar]) => {
+      const sr = BENCH[sym], [j0, j1] = benchSlice(sr);
+      return { sym, sr, cssVar, j0, j1, base: baseAt(sr) };
+    })
+    .filter(cp => cp.j1 - cp.j0 >= 2);
+
   let lo = Infinity, hi = -Infinity;
-  for (let i = i0; i < i1; i++) { const v = s.c[i]; if (v < lo) lo = v; if (v > hi) hi = v; }
-  const padF = state.log ? 1.06 : (hi - lo) * 0.07 || lo * 0.05;
-  yLo = state.log ? lo / padF : Math.max(0, lo - padF); yHi = state.log ? hi * padF : hi + padF;
+  const toMain = v => cmp ? reb(v, mainBase) : v;
+  for (let i = i0; i < i1; i++) { const v = toMain(s.c[i]); if (v < lo) lo = v; if (v > hi) hi = v; }
+  for (const cp of curComps)
+    for (let i = cp.j0; i < cp.j1; i++) { const v = reb(cp.sr.c[i], cp.base); if (v < lo) lo = v; if (v > hi) hi = v; }
+  const padF = logNow ? 1.06 : (hi - lo) * 0.07 || Math.abs(lo) * 0.05 || 1;
+  yLo = logNow ? lo / padF : cmp ? lo - padF : Math.max(0, lo - padF);
+  yHi = logNow ? hi * padF : hi + padF;
 
   // grid + y labels
   ctx.font = "11px system-ui, sans-serif";
-  const yt = state.log ? ticksLog(yLo, yHi) : niceTicksLinear(yLo, yHi, 6);
+  const yt = logNow ? ticksLog(yLo, yHi) : niceTicksLinear(yLo, yHi, 6);
   ctx.strokeStyle = css("--grid"); ctx.fillStyle = css("--muted"); ctx.lineWidth = 1;
+  const fmtTick = v => cmp
+    ? (v > 0 ? "+" : "") + (Math.abs(v) >= 1000 ? Math.round(v / 100) / 10 + "k" : +v.toFixed(1)) + "%"
+    : v >= 1000 ? (v / 1000) + "k" : String(+v.toFixed(2));
   for (const v of yt) {
     const y = Math.round(yPx(v)) + 0.5;
     ctx.beginPath(); ctx.moveTo(PAD.l, y); ctx.lineTo(W - PAD.r, y); ctx.stroke();
     ctx.textAlign = "right"; ctx.textBaseline = "middle";
-    ctx.fillText(v >= 1000 ? (v / 1000) + "k" : String(+v.toFixed(2)), PAD.l - 7, y);
+    ctx.fillText(fmtTick(v), PAD.l - 7, y);
+  }
+  if (cmp && yLo < 0 && yHi > 0) {           // emphasized zero line
+    const y = Math.round(yPx(0)) + 0.5;
+    ctx.strokeStyle = css("--baseline");
+    ctx.beginPath(); ctx.moveTo(PAD.l, y); ctx.lineTo(W - PAD.r, y); ctx.stroke();
   }
   // x labels + baseline
   ctx.textAlign = "center"; ctx.textBaseline = "top";
@@ -486,34 +556,47 @@ function renderMain() {
   ctx.strokeStyle = css("--baseline");
   ctx.beginPath(); ctx.moveTo(PAD.l, H - PAD.b + 0.5); ctx.lineTo(W - PAD.r, H - PAD.b + 0.5); ctx.stroke();
 
-  // decimate to per-pixel min/max
+  // series lines (benchmarks under the main line)
   const plotW = W - PAD.l - PAD.r;
-  const pts = [];
-  if (i1 - i0 > plotW * 2) {
-    let px = -1, mn = 0, mx = 0, mnI = 0, mxI = 0;
-    for (let i = i0; i < i1; i++) {
-      const p = Math.round(xPx(s.d[i]));
-      if (p !== px) {
-        if (px >= 0) { if (mnI <= mxI) { pts.push([px, mn]); if (mxI !== mnI) pts.push([px, mx]); } else { pts.push([px, mx]); pts.push([px, mn]); } }
-        px = p; mn = mx = s.c[i]; mnI = mxI = i;
-      } else { if (s.c[i] < mn) { mn = s.c[i]; mnI = i; } if (s.c[i] > mx) { mx = s.c[i]; mxI = i; } }
-    }
-    if (px >= 0) pts.push([px, mn]);
-  } else {
-    for (let i = i0; i < i1; i++) pts.push([xPx(s.d[i]), s.c[i]]);
-  }
-
-  // area fill + line
   const seriesCol = css("--series-1");
+  const pts = linePts(s, i0, i1, toMain);
   ctx.save();
   ctx.beginPath(); ctx.rect(PAD.l, PAD.t, plotW, H - PAD.t - PAD.b); ctx.clip();
-  const grad = ctx.createLinearGradient(0, PAD.t, 0, H - PAD.b);
-  grad.addColorStop(0, seriesCol + "2e"); grad.addColorStop(1, seriesCol + "00");
+  const ends = [];                              // [{name, col, y}] for direct end labels
+  for (const cp of curComps) {
+    const cpts = linePts(cp.sr, cp.j0, cp.j1, v => reb(v, cp.base));
+    const col = css(cp.cssVar);
+    ctx.beginPath();
+    cpts.forEach(([x, v], k) => k ? ctx.lineTo(x, yPx(v)) : ctx.moveTo(x, yPx(v)));
+    ctx.strokeStyle = col; ctx.lineWidth = 1.75; ctx.lineJoin = "round"; ctx.stroke();
+    ends.push({ name: cp.sr.name, col, y: yPx(cpts[cpts.length - 1][1]) });
+  }
   ctx.beginPath();
   pts.forEach(([x, v], k) => k ? ctx.lineTo(x, yPx(v)) : ctx.moveTo(x, yPx(v)));
   ctx.strokeStyle = seriesCol; ctx.lineWidth = 2; ctx.lineJoin = "round"; ctx.stroke();
-  ctx.lineTo(pts[pts.length - 1][0], H - PAD.b); ctx.lineTo(pts[0][0], H - PAD.b); ctx.closePath();
-  ctx.fillStyle = grad; ctx.fill();
+  if (!cmp) {
+    const grad = ctx.createLinearGradient(0, PAD.t, 0, H - PAD.b);
+    grad.addColorStop(0, seriesCol + "2e"); grad.addColorStop(1, seriesCol + "00");
+    ctx.lineTo(pts[pts.length - 1][0], H - PAD.b); ctx.lineTo(pts[0][0], H - PAD.b); ctx.closePath();
+    ctx.fillStyle = grad; ctx.fill();
+  } else {
+    // direct end labels, nudged apart when they collide
+    ends.push({ name: state.ticker === "^STI" ? "STI" : state.ticker.replace(".SI", ""), col: seriesCol, y: yPx(pts[pts.length - 1][1]) });
+    ends.sort((a, b) => a.y - b.y);
+    for (let k = 1; k < ends.length; k++) ends[k].y = Math.max(ends[k].y, ends[k - 1].y + 13);
+    for (let k = ends.length - 1; k >= 0; k--) {
+      ends[k].y = Math.min(ends[k].y, H - PAD.b - 6 - (ends.length - 1 - k) * 13);
+      if (k < ends.length - 1) ends[k].y = Math.min(ends[k].y, ends[k + 1].y - 13);
+    }
+    ctx.font = "600 10.5px system-ui, sans-serif";
+    ctx.textAlign = "right"; ctx.textBaseline = "middle";
+    for (const e of ends) {
+      const y = Math.max(PAD.t + 6, e.y);
+      ctx.lineWidth = 3; ctx.strokeStyle = css("--surface-1");
+      ctx.strokeText(e.name, W - PAD.r - 3, y);
+      ctx.fillStyle = e.col; ctx.fillText(e.name, W - PAD.r - 3, y);
+    }
+  }
   ctx.restore();
 
   // event markers: dot on the price line; callout box + leader when there is room
@@ -525,7 +608,7 @@ function renderMain() {
   const rr = (x, y, w, h, r) => { ctx.beginPath(); ctx.roundRect ? ctx.roundRect(x, y, w, h, r) : ctx.rect(x, y, w, h); };
   ctx.font = "11px system-ui, sans-serif";
   for (const e of evs) {
-    const x = xPx(e.day), y = yPx(s.c[nearestIdx(s, e.day)]);
+    const x = xPx(e.day), y = yPx(toMain(s.c[nearestIdx(s, e.day)]));
     const col = css(CATS[e.c].cssVar), isSel = e.i === state.sel;
     const m = { i: e.i, x, y, box: null };
     if (isSel) {                                  // selected: faint full-height hairline
@@ -607,9 +690,20 @@ function drawOverlay(mx, my) {
   ctx.clearRect(0, 0, W, H);
   if (mx < PAD.l || mx > W - PAD.r) { tooltip.style.display = "none"; return; }
   const s = cur(), day = pxDay(mx), idx = nearestIdx(s, day);
-  const sx = xPx(s.d[idx]), sy = yPx(s.c[idx]);
+  const cmp = cmpOn();
+  const sx = xPx(s.d[idx]), sy = yPx(cmp ? reb(s.c[idx], mainBase) : s.c[idx]);
   ctx.strokeStyle = css("--baseline"); ctx.lineWidth = 1;
   ctx.beginPath(); ctx.moveTo(Math.round(sx) + 0.5, PAD.t); ctx.lineTo(Math.round(sx) + 0.5, H - PAD.b); ctx.stroke();
+  const hov = [];                     // benchmark values at the hovered day
+  for (const cp of curComps) {
+    if (day < cp.sr.d[0] - 3) continue;               // series not born yet
+    const j = nearestIdx(cp.sr, day);
+    const pct = reb(cp.sr.c[j], cp.base);
+    hov.push({ name: cp.sr.name, cssVar: cp.cssVar, pct });
+    ctx.beginPath(); ctx.arc(xPx(cp.sr.d[j]), yPx(pct), 4, 0, Math.PI * 2);
+    ctx.fillStyle = css(cp.cssVar); ctx.fill();
+    ctx.strokeStyle = css("--surface-1"); ctx.lineWidth = 2; ctx.stroke();
+  }
   ctx.beginPath(); ctx.arc(sx, sy, 4.5, 0, Math.PI * 2);
   ctx.fillStyle = css("--series-1"); ctx.fill();
   ctx.strokeStyle = css("--surface-1"); ctx.lineWidth = 2; ctx.stroke();
@@ -621,6 +715,13 @@ function drawOverlay(mx, my) {
   add("p", fmtP(s.c[idx], priceDp(s.c[idx])));
   const first = s.c[Math.min(lowerBound(s.d, state.t0), s.c.length - 1)];
   add("r", fmtPct((s.c[idx] / first - 1) * 100) + " over shown range");
+  for (const h of hov) {
+    const row = document.createElement("div"); row.className = "ev";
+    row.style.setProperty("--c", css(h.cssVar));
+    const key = document.createElement("span"); key.className = "key";
+    const span = document.createElement("span"); span.textContent = h.name + " " + fmtPct(h.pct);
+    row.append(key, span); tooltip.appendChild(row);
+  }
   const ev = hoveredEvent(mx, my);
   if (ev) {
     const row = document.createElement("div"); row.className = "ev";
@@ -832,6 +933,22 @@ function buildControls() {
     });
     $("catChips").appendChild(c);
   }
+  for (const [sym, cssVar] of BENCH_ORDER) {
+    if (!BENCH[sym]) continue;
+    const c = document.createElement("button");
+    c.type = "button"; c.className = "chip"; c.setAttribute("aria-pressed", "false");
+    c.style.setProperty("--c", `var(${cssVar})`);
+    const dot = document.createElement("span"); dot.className = "dot";
+    c.append(dot, document.createTextNode(BENCH[sym].name));
+    c.addEventListener("click", () => {
+      state.bench.has(sym) ? state.bench.delete(sym) : state.bench.add(sym);
+      c.setAttribute("aria-pressed", String(state.bench.has(sym)));
+      $("scaleSeg").classList.toggle("dim", cmpOn());   // % scale while comparing — log paused
+      renderMain(); clearOverlay();
+    });
+    $("benchChips").appendChild(c);
+  }
+  if (!Object.keys(BENCH).length) $("benchHint").style.display = "none";
   $("scaleSeg").addEventListener("click", ev => {
     const b = ev.target.closest("button"); if (!b) return;
     state.log = b.dataset.scale === "log";
