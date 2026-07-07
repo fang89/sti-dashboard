@@ -69,6 +69,9 @@
   .tile .k { font-size: 11px; text-transform: uppercase; letter-spacing: 0.06em; color: var(--muted); }
   .tile .v { font-size: 22px; font-weight: 650; margin-top: 2px; }
   .tile .s { font-size: 12px; color: var(--ink-2); margin-top: 1px; }
+  .tile .vr { display: flex; align-items: baseline; gap: 7px; margin-top: 3px; }
+  .tile .vr .vl { font-size: 11px; color: var(--muted); min-width: 24px; }
+  .tile .vr .vv { font-size: 17px; font-weight: 650; }
   .pos { color: var(--up); } .neg { color: var(--down); }
 
   .controls { display: flex; align-items: center; gap: 14px; flex-wrap: wrap; margin: 10px 0 12px; }
@@ -678,8 +681,8 @@ function refreshChrome() {
     ["Last close", fmtP(last, priceDp(last)), fmtPct(dayChg) + " on the day", dayChg],
     ["Shown range", fmtPct(viewChg), dstr(state.t0) + " — " + dstr(state.t1), viewChg],
     ["All-time high", fmtP(athV, priceDp(athV)), dstr(s.d[athI], true), null],
-    ["P/E · P/B", (prof.pe ? prof.pe.toFixed(1) : "—") + " · " + (prof.pb ? prof.pb.toFixed(2) : "—"),
-      state.ticker === "^STI" ? "cap-weighted, 30 constituents" : "price/earnings · price/book", null],
+    ["Valuation", [["P/E", prof.pe ? prof.pe.toFixed(1) : "—"], ["P/B", prof.pb ? prof.pb.toFixed(2) : "—"]],
+      state.ticker === "^STI" ? "cap-weighted, 30 constituents" : "", null],
     ["Dividend yield", prof.dy != null ? prof.dy.toFixed(2) + "%" : "—", divSub, null],
   ];
   const tl = $("tiles"); tl.textContent = "";
@@ -701,10 +704,24 @@ function refreshChrome() {
   for (const [k, v, sub, delta] of tiles) {
     const t = document.createElement("div"); t.className = "tile";
     const ke = document.createElement("div"); ke.className = "k"; ke.textContent = k;
-    const ve = document.createElement("div"); ve.className = "v"; ve.textContent = v;
-    if (delta !== null) ve.classList.add(delta >= 0 ? "pos" : "neg");
-    const se = document.createElement("div"); se.className = "s"; se.textContent = sub;
-    t.append(ke, ve, se); tl.appendChild(t);
+    t.appendChild(ke);
+    if (Array.isArray(v)) {          // stacked label+value rows (valuation tile)
+      for (const [rl, rv] of v) {
+        const row = document.createElement("div"); row.className = "vr";
+        const le = document.createElement("span"); le.className = "vl"; le.textContent = rl;
+        const ve = document.createElement("span"); ve.className = "vv"; ve.textContent = rv;
+        row.append(le, ve); t.appendChild(row);
+      }
+    } else {
+      const ve = document.createElement("div"); ve.className = "v"; ve.textContent = v;
+      if (delta !== null) ve.classList.add(delta >= 0 ? "pos" : "neg");
+      t.appendChild(ve);
+    }
+    if (sub) {
+      const se = document.createElement("div"); se.className = "s"; se.textContent = sub;
+      t.appendChild(se);
+    }
+    tl.appendChild(t);
   }
   // sidebar % over current view
   document.querySelectorAll(".tk").forEach(btn => {
