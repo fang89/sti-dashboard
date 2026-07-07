@@ -5,6 +5,7 @@ constituents (USD-quoted ones converted at the current USDSGD rate).
 
 Format: window.STI_PROFILES = { "D05.SI": {"blurb": ..., "mcap": 142e9, "cur": "SGD"}, ... }
 """
+import datetime
 import json
 import time
 
@@ -46,6 +47,10 @@ BLURBS = {
 
 out = {}
 total_sgd = 0.0
+earn_sgd = 0.0   # Σ mcap/pe  → index P/E = Σmcap / Σearnings
+book_sgd = 0.0   # Σ mcap/pb  → index P/B = Σmcap / Σbook
+dy_wsum = 0.0    # Σ mcap·yield → index yield = weighted average
+dy_wcap = 0.0
 usdsgd = None
 try:
     fx = yf.Ticker("USDSGD=X").history(period="5d")
@@ -58,17 +63,56 @@ for i, (sym, blurb) in enumerate(BLURBS.items(), 1):
     entry = {"blurb": blurb}
     if sym != "^STI":
         try:
-            info = yf.Ticker(sym).info or {}
+            tk = yf.Ticker(sym)
+            info = tk.info or {}
             mcap = info.get("marketCap")
             cur = info.get("currency") or "SGD"
+            mcap_sgd = 0.0
             if mcap:
                 entry["mcap"] = mcap
                 entry["cur"] = cur
                 if cur == "SGD":
-                    total_sgd += mcap
+                    mcap_sgd = mcap
                 elif cur == "USD" and usdsgd:
-                    total_sgd += mcap * usdsgd
-            print(f"[{i:2d}/31] {sym:8s} {cur} {mcap/1e9 if mcap else 0:8.1f}b")
+                    mcap_sgd = mcap * usdsgd
+                total_sgd += mcap_sgd
+
+            price = info.get("regularMarketPrice") or info.get("previousClose")
+            pe = info.get("trailingPE")
+            pb = info.get("priceToBook")
+            if pe and pe > 0:
+                entry["pe"] = round(pe, 1)
+                earn_sgd += mcap_sgd / pe
+            if pb and pb > 0:
+                entry["pb"] = round(pb, 2)
+                book_sgd += mcap_sgd / pb
+
+            # dividends: last payout, trailing-12m yield, announced next date
+            try:
+                div = tk.dividends
+                if div is not None and len(div):
+                    last = div.index[-1]
+                    entry["ldiv"] = round(float(div.iloc[-1]), 4)
+                    entry["ldivd"] = last.strftime("%Y-%m-%d")
+                    cutoff = last.__class__.now(tz=div.index.tz) - datetime.timedelta(days=365)
+                    ttm = float(div[div.index >= cutoff].sum())
+                    if price and ttm > 0:
+                        entry["dy"] = round(ttm / price * 100, 2)
+                        dy_wsum += mcap_sgd * entry["dy"]
+                        dy_wcap += mcap_sgd
+            except Exception as exc:
+                print(f"         {sym}: dividend history failed ({exc})")
+            try:
+                cal = tk.calendar or {}
+                nxt = cal.get("Ex-Dividend Date") or cal.get("Dividend Date")
+                if nxt and str(nxt) > datetime.date.today().isoformat():
+                    entry["ndivd"] = str(nxt)
+            except Exception:
+                pass
+
+            print(f"[{i:2d}/31] {sym:8s} {cur} {mcap/1e9 if mcap else 0:8.1f}b  "
+                  f"PE {entry.get('pe', '—'):>6}  PB {entry.get('pb', '—'):>6}  "
+                  f"yield {entry.get('dy', '—')}%")
         except Exception as exc:
             print(f"[{i:2d}/31] {sym:8s} FAILED: {exc}")
         time.sleep(0.4)
@@ -77,7 +121,14 @@ for i, (sym, blurb) in enumerate(BLURBS.items(), 1):
 if total_sgd:
     out["^STI"]["mcap"] = round(total_sgd)
     out["^STI"]["cur"] = "SGD"
-    print(f"index combined cap: S${total_sgd/1e9:.0f}b")
+    if earn_sgd:
+        out["^STI"]["pe"] = round(total_sgd / earn_sgd, 1)
+    if book_sgd:
+        out["^STI"]["pb"] = round(total_sgd / book_sgd, 2)
+    if dy_wcap:
+        out["^STI"]["dy"] = round(dy_wsum / dy_wcap, 2)
+    print(f"index combined cap: S${total_sgd/1e9:.0f}b  "
+          f"PE {out['^STI'].get('pe')}  PB {out['^STI'].get('pb')}  yield {out['^STI'].get('dy')}%")
 
 with open("profiles.js", "w") as f:
     f.write("window.STI_PROFILES=" + json.dumps(out, separators=(",", ":")) + ";\n")
